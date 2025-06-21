@@ -1,10 +1,11 @@
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Dashboard from './dashboard/Dashboard';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import SignIn from './sign-in/SignIn';
 import SignUp from './sign-up/SignUp';
-import Dashboard from './dashboard/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -16,8 +17,14 @@ root.render(
       </Route>
       <Route path="/sign-up" element={<SignUp />}>
       </Route>
-      <Route path="/dashboard" element={<Dashboard />}>
-      </Route>
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   </BrowserRouter>
 );
