@@ -6,7 +6,9 @@ import Divider from '@mui/material/Divider';
 import Drawer, { drawerClasses } from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { jwtDecode } from 'jwt-decode';
 import PropTypes from 'prop-types';
+import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import CardAlert from './CardAlert';
 import MenuButton from './MenuButton';
@@ -20,6 +22,20 @@ function SideMenuMobile({ open, toggleDrawer }) {
     navigate('/');
   };
 
+  const [user, setUser] = React.useState(null);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUser(decoded);
+        console.log(decoded);
+      } catch (err) {
+        console.error('Invalid token:', err);
+      }
+    }
+  }, []);
 
   return (
     <Drawer
@@ -47,12 +63,12 @@ function SideMenuMobile({ open, toggleDrawer }) {
           >
             <Avatar
               sizes="small"
-              alt="Riley Carter"
+              alt={user?.email || 'User'}
               src="/static/images/avatar/7.jpg"
               sx={{ width: 24, height: 24 }}
             />
             <Typography component="p" variant="h6">
-              Riley Carter
+              {user?.fullName || 'Guest'}
             </Typography>
           </Stack>
           <MenuButton showBadge>

@@ -12,12 +12,17 @@ import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
+import ErrorIcon from '@mui/icons-material/Error';
+import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 const mainListItems = [
   { text: 'Home', icon: <HomeRoundedIcon /> },
-  { text: 'Analytics', icon: <AnalyticsRoundedIcon /> },
-  { text: 'Clients', icon: <PeopleRoundedIcon /> },
-  { text: 'Tasks', icon: <AssignmentRoundedIcon /> },
+  { text: 'Inventory', icon: <AnalyticsRoundedIcon /> },
+  { text: 'Add Item', icon: <PeopleRoundedIcon /> },
+  { text: 'Receive Shipment', icon: <AssignmentRoundedIcon /> },
+  { text: 'Low Stock', icon: <ErrorIcon /> },
+  { text: 'Reports', icon: <AssessmentIcon /> },
 ];
 
 const secondaryListItems = [
