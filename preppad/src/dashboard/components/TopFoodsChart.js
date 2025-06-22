@@ -17,9 +17,9 @@ export default function TopFoodsChart() {
         </Typography>
         <BarChart
           height={300}
-          series={[{ data: topFoods.map((f) => f.amountUsed), label: 'Units Used' }]}
+          series={[{ data: topFoods.map((f) => f.amountUsed), label: 'Food Sold' }]}
           xAxis={[{ scaleType: 'band', data: topFoods.map((f) => f.name) }]}
-          yAxis={[{ label: 'Units' }]}
+          yAxis={[{ label: 'Food' }]}
           colors={['#3f51b5']}
           margin={{ left: 60, right: 20, top: 20, bottom: 40 }}
         />
