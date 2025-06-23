@@ -1,15 +1,13 @@
-import * as React from 'react';
-import { jwtDecode } from 'jwt-decode';
-import { styled } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
-import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
 import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
+import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
+import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import SelectContent from './SelectContent';
-import MenuContent from './MenuContent';
+import { jwtDecode } from 'jwt-decode';
+import * as React from 'react';
 import CardAlert from './CardAlert';
+import MenuContent from './MenuContent';
 import OptionsMenu from './OptionsMenu';
 
 const drawerWidth = 200;
