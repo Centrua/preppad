@@ -1,21 +1,18 @@
-import * as React from 'react';
-import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
+import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Copyright from '../internals/components/Copyright';
-import ChartUserByCountry from './ChartUserByCountry';
-import CustomizedTreeView from './CustomizedTreeView';
-import CustomizedDataGrid from './CustomizedDataGrid';
-import HighlightedCard from './HighlightedCard';
-import PageViewsBarChart from './PageViewsBarChart';
-import SessionsChart from './SessionsChart';
+import ExpiringSoonList from './ExpiringSoonList';
+import MiniCard from './InventoryValueCard';
+import LowStockList from './LowStockList';
 import StatCard from './StatCard';
+import TopFoodsChart from './TopFoodsChart';
+import UsageTrendCard from './UsageTrendCard';
 
 const data = [
   {
-    title: 'Users',
-    value: '14k',
+    title: 'Ingredient Cost',
+    value: '3.43k',
     interval: 'Last 30 days',
     trend: 'up',
     data: [
@@ -24,23 +21,13 @@ const data = [
     ],
   },
   {
-    title: 'Conversions',
-    value: '325',
+    title: 'Inventory Waste',
+    value: '$325.79',
     interval: 'Last 30 days',
     trend: 'down',
     data: [
       1640, 1250, 970, 1130, 1050, 900, 720, 1080, 900, 450, 920, 820, 840, 600, 820,
       780, 800, 760, 380, 740, 660, 620, 840, 500, 520, 480, 400, 360, 300, 220,
-    ],
-  },
-  {
-    title: 'Event count',
-    value: '200k',
-    interval: 'Last 30 days',
-    trend: 'neutral',
-    data: [
-      500, 400, 510, 530, 520, 600, 530, 520, 510, 730, 520, 510, 530, 620, 510, 530,
-      520, 410, 530, 520, 610, 530, 520, 610, 530, 420, 510, 430, 520, 510,
     ],
   },
 ];
@@ -50,7 +37,7 @@ export default function MainGrid() {
     <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1700px' } }}>
       {/* cards */}
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Overview
+        Stock Summary
       </Typography>
       <Grid
         container
@@ -63,28 +50,51 @@ export default function MainGrid() {
             <StatCard {...card} />
           </Grid>
         ))}
+      </Grid>
+
+      <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
+        Top Products
+      </Typography>
+      <Grid
+        container
+        spacing={2}
+        columns={12}
+        sx={{ mb: (theme) => theme.spacing(2) }}
+      >
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <HighlightedCard />
+          <MiniCard title='Inventory Total Value' text='$4,365' />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <SessionsChart />
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MiniCard title='Top Drink This Week' text='Iced Coffee (24 sold)' />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <PageViewsBarChart />
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MiniCard title='Top Food This Week' text='Breakfast Bowls (13 sold)' />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MiniCard title='Top Product This Month' text='Iced Coffee (78 sold)' />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <UsageTrendCard />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <TopFoodsChart />
         </Grid>
       </Grid>
+
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Details
+        Stock Alerts
       </Typography>
-      <Grid container spacing={2} columns={12}>
-        <Grid size={{ xs: 12, lg: 9 }}>
-          <CustomizedDataGrid />
+      <Grid
+        container
+        spacing={2}
+        columns={12}
+        sx={{ mb: (theme) => theme.spacing(2) }}
+      >
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <LowStockList></LowStockList>
         </Grid>
-        <Grid size={{ xs: 12, lg: 3 }}>
-          <Stack gap={2} direction={{ xs: 'column', sm: 'row', lg: 'column' }}>
-            <CustomizedTreeView />
-            <ChartUserByCountry />
-          </Stack>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <ExpiringSoonList></ExpiringSoonList>
         </Grid>
       </Grid>
       <Copyright sx={{ my: 4 }} />

@@ -1,29 +1,33 @@
-import * as React from 'react';
+import { Link } from 'react-router-dom';
+import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
+import ErrorIcon from '@mui/icons-material/Error';
+import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
-import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
-import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
-import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
-import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 
 const mainListItems = [
-  { text: 'Home', icon: <HomeRoundedIcon /> },
-  { text: 'Analytics', icon: <AnalyticsRoundedIcon /> },
-  { text: 'Clients', icon: <PeopleRoundedIcon /> },
-  { text: 'Tasks', icon: <AssignmentRoundedIcon /> },
+  { text: 'Home', icon: <HomeRoundedIcon />, path: '/' },
+  { text: 'Inventory', icon: <AnalyticsRoundedIcon />, path: '/inventory' },
+  { text: 'Add Item', icon: <PeopleRoundedIcon />, path: '/add-item' },
+  { text: 'Receive Shipment', icon: <AssignmentRoundedIcon />, path: '/receive' },
+  { text: 'Low Stock', icon: <ErrorIcon />, path: '/low-stock' },
+  { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
 ];
 
 const secondaryListItems = [
-  { text: 'Settings', icon: <SettingsRoundedIcon /> },
-  { text: 'About', icon: <InfoRoundedIcon /> },
-  { text: 'Feedback', icon: <HelpRoundedIcon /> },
+  { text: 'Settings', icon: <SettingsRoundedIcon />, path: '/settings' },
+  { text: 'About', icon: <InfoRoundedIcon />, path: '/about' },
+  { text: 'Feedback', icon: <HelpRoundedIcon />, path: '/feedback' },
 ];
 
 export default function MenuContent() {
@@ -32,7 +36,11 @@ export default function MenuContent() {
       <List dense>
         {mainListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-            <ListItemButton selected={index === 0}>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              selected={index === 0}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
@@ -42,7 +50,10 @@ export default function MenuContent() {
       <List dense>
         {secondaryListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: 'block' }}>
-            <ListItemButton>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
