@@ -1,10 +1,14 @@
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import AddItem from './add-item/AddItem';
+import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './dashboard/Dashboard';
 import './index.css';
+import SquareCallback from './profile/SquareCallback';
+import SquareOAuth from './profile/SquareOAuth';
 import reportWebVitals from './reportWebVitals';
 import SignIn from './sign-in/SignIn';
 import SignUp from './sign-up/SignUp';
-import Dashboard from './dashboard/Dashboard';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -16,8 +20,32 @@ root.render(
       </Route>
       <Route path="/sign-up" element={<SignUp />}>
       </Route>
-      <Route path="/dashboard" element={<Dashboard />}>
+      <Route path="/add-item" element={<AddItem />}>
       </Route>
+      <Route
+        path="/square-oauth"
+        element={
+          <ProtectedRoute>
+            <SquareOAuth />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/square-callback"
+        element={
+          <ProtectedRoute>
+            <SquareCallback />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   </BrowserRouter>
 );
