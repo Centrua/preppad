@@ -4,6 +4,8 @@ import AddItem from './add-item/AddItem';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './dashboard/Dashboard';
 import './index.css';
+import SquareCallback from './profile/SquareCallback';
+import SquareOAuth from './profile/SquareOAuth';
 import reportWebVitals from './reportWebVitals';
 import SignIn from './sign-in/SignIn';
 import SignUp from './sign-up/SignUp';
@@ -20,6 +22,22 @@ root.render(
       </Route>
       <Route path="/add-item" element={<AddItem />}>
       </Route>
+      <Route
+        path="/square-oauth"
+        element={
+          <ProtectedRoute>
+            <SquareOAuth />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/square-callback"
+        element={
+          <ProtectedRoute>
+            <SquareCallback />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={
