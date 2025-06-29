@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
@@ -14,9 +13,10 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import { Link } from 'react-router-dom';
 
 const mainListItems = [
-  { text: 'Home', icon: <HomeRoundedIcon />, path: '/' },
+  { text: 'Dashboard', icon: <HomeRoundedIcon />, path: '/dashboard' },
   { text: 'Inventory', icon: <AnalyticsRoundedIcon />, path: '/inventory' },
   { text: 'Add Item', icon: <PeopleRoundedIcon />, path: '/add-item' },
   { text: 'Receive Shipment', icon: <AssignmentRoundedIcon />, path: '/receive' },
