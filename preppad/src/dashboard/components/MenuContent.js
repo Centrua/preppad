@@ -13,7 +13,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const mainListItems = [
   { text: 'Dashboard', icon: <HomeRoundedIcon />, path: '/dashboard' },
@@ -25,12 +25,14 @@ const mainListItems = [
 ];
 
 const secondaryListItems = [
-  { text: 'Settings', icon: <SettingsRoundedIcon />, path: '/settings' },
+  { text: 'Integrations', icon: <SettingsRoundedIcon />, path: '/square-oauth' },
   { text: 'About', icon: <InfoRoundedIcon />, path: '/about' },
   { text: 'Feedback', icon: <HelpRoundedIcon />, path: '/feedback' },
 ];
 
 export default function MenuContent() {
+  const location = useLocation();
+
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: 'space-between' }}>
       <List dense>
@@ -39,7 +41,7 @@ export default function MenuContent() {
             <ListItemButton
               component={Link}
               to={item.path}
-              selected={index === 0}
+              selected={location.pathname === item.path}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
@@ -53,6 +55,7 @@ export default function MenuContent() {
             <ListItemButton
               component={Link}
               to={item.path}
+              selected={location.pathname === item.path}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />

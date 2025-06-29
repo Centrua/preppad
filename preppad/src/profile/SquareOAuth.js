@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
-import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { jwtDecode } from 'jwt-decode';
@@ -15,6 +15,8 @@ import {
   treeViewCustomizations,
 } from '../dashboard/theme/customizations';
 import AppTheme from '../shared-theme/AppTheme';
+
+const squareLogo = 'https://upload.wikimedia.org/wikipedia/commons/2/27/Square%2C_Inc_-_Square_Logo.jpg';
 
 const xThemeComponents = {
   ...chartsCustomizations,
@@ -81,21 +83,26 @@ const SquareOAuth = () => {
             alignItems: 'center',
           })}
         >
-          <Paper
-            elevation={3}
+          <Stack
+            spacing={3}
             sx={{
-              p: { xs: 3, md: 5 },
               maxWidth: 500,
               width: '100%',
+              alignItems: 'center',
               textAlign: 'center',
-              borderRadius: 4,
             }}
           >
-            <Typography variant="h5" component="h1" gutterBottom>
+            <img
+              src={squareLogo}
+              alt="Square Logo"
+              style={{ height: 80, marginBottom: 16 }}
+            />
+
+            <Typography variant="h4" component="h1">
               Connect Your Square Account
             </Typography>
 
-            <Typography variant="body1" sx={{ mb: 4 }}>
+            <Typography variant="body1">
               {connected === null ? 'Checking connection status...' :
                 connected
                   ? 'Your Square account is already connected.'
@@ -112,7 +119,7 @@ const SquareOAuth = () => {
                 Connect with Square
               </Button>
             )}
-          </Paper>
+          </Stack>
         </Box>
       </Box>
     </AppTheme>
