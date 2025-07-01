@@ -30,11 +30,6 @@ export default function OptionsMenu() {
     setAnchorEl(null);
   };
 
-  const handleAccountClick = () => {
-    handleClose();
-    navigate('/square-oauth');
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     setAnchorEl(null);
@@ -69,9 +64,7 @@ export default function OptionsMenu() {
           },
         }}
       >
-        <MenuItem onClick={handleAccountClick}>Account</MenuItem>
         <MenuItem onClick={handleClose}>Manage Business</MenuItem>
-        <MenuItem onClick={handleClose}>Settings</MenuItem>
         <Divider />
         <MenuItem
           onClick={handleLogout}
