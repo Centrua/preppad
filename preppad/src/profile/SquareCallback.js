@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
 const SquareCallback = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const code = searchParams.get('code');
 
-    // Retrieve token from localStorage
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('No JWT token found in localStorage');
@@ -32,18 +32,13 @@ const SquareCallback = () => {
       })
         .then((res) => res.json())
         .then((data) => {
+          navigate('/square-oauth');
         })
         .catch((err) => {
           console.error('Error exchanging code:', err);
         });
     }
-  }, [searchParams]);
-
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Connecting to Square...</h2>
-    </div>
-  );
+  }, [searchParams, navigate]);
 };
 
 export default SquareCallback;
