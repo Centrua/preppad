@@ -8,6 +8,11 @@ const SquareCallback = () => {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const error = searchParams.get('error');
+
+    if (error) {
+      navigate('/square-oauth')
+    }
 
     const token = localStorage.getItem('token');
     if (!token) {
