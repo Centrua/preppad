@@ -32,7 +32,6 @@ export default function SideMenu() {
       try {
         const decoded = jwtDecode(token);
         setUser(decoded);
-        console.log(decoded);
       } catch (err) {
         console.error('Invalid token:', err);
       }

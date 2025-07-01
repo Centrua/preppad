@@ -30,7 +30,6 @@ function SideMenuMobile({ open, toggleDrawer }) {
       try {
         const decoded = jwtDecode(token);
         setUser(decoded);
-        console.log(decoded);
       } catch (err) {
         console.error('Invalid token:', err);
       }

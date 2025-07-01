@@ -24,9 +24,6 @@ const SquareCallback = () => {
       return;
     }
 
-    console.log(businessId);
-    console.log(code)
-
     if (code && businessId) {
       fetch(`${process.env.REACT_APP_API_BASE_URL}/square/oauth-callback`, {
         method: 'POST',
@@ -35,7 +32,6 @@ const SquareCallback = () => {
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log('Received access token:', data);
         })
         .catch((err) => {
           console.error('Error exchanging code:', err);
