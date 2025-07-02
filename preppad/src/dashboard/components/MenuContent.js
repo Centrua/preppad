@@ -14,17 +14,20 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import { Link, useLocation } from 'react-router-dom';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+
 
 const mainListItems = [
   { text: 'Dashboard', icon: <HomeRoundedIcon />, path: '/dashboard' },
   { text: 'Inventory', icon: <AnalyticsRoundedIcon />, path: '/inventory' },
-  { text: 'Add Item', icon: <PeopleRoundedIcon />, path: '/add-item' },
-  { text: 'Receive Shipment', icon: <AssignmentRoundedIcon />, path: '/receive' },
-  { text: 'Low Stock', icon: <ErrorIcon />, path: '/low-stock' },
-  { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
+  { text: 'Shopping List', icon: <AssignmentRoundedIcon />, path: '/shopping-list' },
+  { text: 'Pending Purchases', icon: <AttachMoneyIcon />, path: '/pending-purchases' },
+  { text: 'Recipes', icon: <LocalCafeIcon />, path: '/recipes' },
 ];
 
 const secondaryListItems = [
+  { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
   { text: 'Integrations', icon: <SettingsRoundedIcon />, path: '/square-oauth' },
 ];
 
