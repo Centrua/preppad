@@ -26,8 +26,8 @@ const mainListItems = [
 
 const secondaryListItems = [
   { text: 'Integrations', icon: <SettingsRoundedIcon />, path: '/square-oauth' },
-  { text: 'About', icon: <InfoRoundedIcon />, path: '/about' },
-  { text: 'Feedback', icon: <HelpRoundedIcon />, path: '/feedback' },
+  //{ text: 'About', icon: <InfoRoundedIcon />, path: '/about' },
+  //{ text: 'Feedback', icon: <HelpRoundedIcon />, path: '/feedback' },
 ];
 
 export default function MenuContent() {
