@@ -21,8 +21,8 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 const mainListItems = [
   { text: 'Dashboard', icon: <HomeRoundedIcon />, path: '/dashboard' },
   { text: 'Inventory', icon: <AnalyticsRoundedIcon />, path: '/inventory' },
-  { text: 'Shopping List', icon: <AssignmentRoundedIcon />, path: '/shoppingList' },
-  { text: 'Pending Purchases', icon: <AttachMoneyIcon />, path: '/pendingPurchases' },
+  { text: 'Shopping List', icon: <AssignmentRoundedIcon />, path: '/shopping-list' },
+  { text: 'Pending Purchases', icon: <AttachMoneyIcon />, path: '/pending-purchases' },
   { text: 'Recipes', icon: <LocalCafeIcon />, path: '/recipes' },
 ];
 
