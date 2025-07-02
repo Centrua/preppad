@@ -1,10 +1,11 @@
 import React from 'react';
+import Layout from '../components/Layout';
 
 export default function DashboardPage() {
   return (
-    <div style={{ padding: '2rem' }}>
+    <Layout>
       <h1>Dashboard</h1>
       <p>This is the Dashboard page.</p>
-    </div>
+    </Layout>
   );
 }

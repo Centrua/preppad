@@ -1,10 +1,11 @@
 import React from 'react';
+import Layout from '../components/Layout';
 
 export default function InventoryPage() {
   return (
-    <div style={{ padding: '2rem' }}>
+    <Layout>
       <h1>Inventory</h1>
       <p>This is the Inventory page.</p>
-    </div>
+    </Layout>
   );
 }

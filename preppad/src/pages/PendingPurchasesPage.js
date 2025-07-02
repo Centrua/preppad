@@ -1,10 +1,11 @@
 import React from 'react';
+import Layout from '../components/Layout';
 
 export default function PendingPurchasesPage() {
   return (
-    <div style={{ padding: '2rem' }}>
+    <Layout>
       <h1>Pending Purchases</h1>
       <p>This is the Pending Purchases page.</p>
-    </div>
+    </Layout>
   );
 }
