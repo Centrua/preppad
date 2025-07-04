@@ -1,22 +1,7 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-
 import { Box, Paper, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-
-import {
-  chartsCustomizations,
-  dataGridCustomizations,
-  datePickersCustomizations,
-  treeViewCustomizations,
-} from '../dashboard/theme/customizations';
-
-const xThemeComponents = {
-  ...chartsCustomizations,
-  ...dataGridCustomizations,
-  ...datePickersCustomizations,
-  ...treeViewCustomizations,
-};
 
 const columns = [
   {
@@ -48,14 +33,9 @@ const columns = [
     editable: true,
     headerAlign: 'center',
     align: 'center',
-    valueParser: (value) => {
-      const parsed = parseFloat(value);
-      return isNaN(parsed) ? 0 : parsed;
+    valueFormatter: (value) => {
+      return "$" + String(Number(value).toFixed(2))
     },
-    valueFormatter: ({ value }) =>
-      typeof value === 'number' && !isNaN(value)
-        ? `$${value.toFixed(2)}`
-        : '$0.00',
   },
   {
     field: 'vendor',
@@ -68,54 +48,26 @@ const columns = [
   {
     field: 'totalPrice',
     headerName: 'Total Price',
-    type: 'number',
     flex: 1,
     headerAlign: 'center',
     align: 'center',
+    type: 'number',
     sortable: false,
-    valueGetter: (params) => {
-      if (!params || !params.row) return 0;
-      const { quantity, unitPrice } = params.row;
-      const total = Number(quantity) * Number(unitPrice);
-      return isNaN(total) ? 0 : total;
+    valueGetter: (value, row) => {
+      return row.quantity*row.unitPrice;
     },
-    valueFormatter: ({ value }) =>
-      typeof value === 'number' && !isNaN(value)
-        ? `$${value.toFixed(2)}`
-        : '$0.00',
+        valueFormatter: (value, row) => {
+      return "$" + String(Number(value).toFixed(2))
+    },
   },
 ];
 
 export default function ShoppingListPage() {
   const [rows, setRows] = useState([
-    {
-      id: 1,
-      item: 'Apples',
-      quantity: 3,
-      unitPrice: 0.5,
-      vendor: 'Walmart',
-    },
-    {
-      id: 2,
-      item: 'Milk',
-      quantity: 2,
-      unitPrice: 1.2,
-      vendor: 'Target',
-    },
-    {
-      id: 3,
-      item: 'Bread',
-      quantity: 1,
-      unitPrice: 2.0,
-      vendor: 'Costco',
-    },
-    {
-      id: 4,
-      item: 'Eggs',
-      quantity: 12,
-      unitPrice: 0.15,
-      vendor: 'Kroger',
-    },
+    { id: 1, item: 'Apples', quantity: 3, unitPrice: 0.5, vendor: 'Walmart' },
+    { id: 2, item: 'Milk', quantity: 2, unitPrice: 1.2, vendor: 'Target' },
+    { id: 3, item: 'Bread', quantity: 1, unitPrice: 2.0, vendor: 'Costco' },
+    { id: 4, item: 'Eggs', quantity: 12, unitPrice: 0.15, vendor: 'Kroger' },
   ]);
 
   const handleProcessRowUpdate = (newRow) => {
