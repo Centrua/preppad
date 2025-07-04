@@ -87,7 +87,7 @@ export default function SignIn(props) {
     const password = data.get('password');
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/login`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

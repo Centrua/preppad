@@ -154,7 +154,7 @@ export default function SignUp(props) {
     };
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/signup`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/users/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
