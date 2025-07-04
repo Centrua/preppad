@@ -98,22 +98,24 @@ export default function ShoppingListPage() {
       const quantities = rows.map((row) => row.quantity);
       const unitPrices = rows.map((row) => row.unitPrice);
       const vendors = rows.map((row) => row.vendor);
-      const totalPrice = rows.reduce(
-        (sum, row) => sum + row.quantity * row.unitPrice,
-        0
-      );
+      const totalPrice = rows.map((row) => row.quantity*row.unitPrice);
 
       const payload = {
         itemIds,
         quantities,
         cheapestUnitPrice: unitPrices, // sending full array of unit prices
-        vendor: vendors.join(', '),
+        vendor: vendors,
         totalPrice,
       };
 
-      const response = await fetch('/pending-purchase', {
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE}/inventory/pending-purchase`, {
         method: 'POST',
         headers: {
+           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
