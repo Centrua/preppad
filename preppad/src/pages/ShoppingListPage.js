@@ -41,19 +41,12 @@ const columns = [
     },
   },
   {
-    field: 'unitPrice',
+    field: 'unitPriceDisplay',
     headerName: 'Cheapest Unit Price',
-    type: 'number',
     flex: 1,
-    editable: true,
+    editable: false,
     headerAlign: 'center',
     align: 'center',
-    valueParser: (value) => {
-      const parsed = parseFloat(value);
-      return isNaN(parsed) ? 0 : parsed;
-    },
-    valueFormatter: ({ value }) =>
-      typeof value === 'number' ? `$${value.toFixed(2)}` : '$0.00',
   },
   {
     field: 'vendor',
@@ -64,15 +57,12 @@ const columns = [
     align: 'center',
   },
   {
-    field: 'totalPrice',
+    field: 'totalPriceDisplay',
     headerName: 'Total Price',
-    type: 'number',
     flex: 1,
+    editable: false,
     headerAlign: 'center',
     align: 'center',
-    sortable: false,
-    valueFormatter: ({ value }) =>
-      typeof value === 'number' ? `$${value.toFixed(2)}` : '$0.00',
   },
 ];
 
@@ -84,7 +74,8 @@ export default function ShoppingListPage() {
       quantity: 3,
       unitPrice: 0.5,
       vendor: 'Walmart',
-      totalPrice: 1.5,
+      unitPriceDisplay: '$0.50',
+      totalPriceDisplay: '$1.50',
     },
     {
       id: 2,
@@ -92,7 +83,8 @@ export default function ShoppingListPage() {
       quantity: 2,
       unitPrice: 1.2,
       vendor: 'Target',
-      totalPrice: 2.4,
+      unitPriceDisplay: '$1.20',
+      totalPriceDisplay: '$2.40',
     },
     {
       id: 3,
@@ -100,7 +92,8 @@ export default function ShoppingListPage() {
       quantity: 1,
       unitPrice: 2.0,
       vendor: 'Costco',
-      totalPrice: 2.0,
+      unitPriceDisplay: '$2.00',
+      totalPriceDisplay: '$2.00',
     },
     {
       id: 4,
@@ -108,7 +101,8 @@ export default function ShoppingListPage() {
       quantity: 12,
       unitPrice: 0.15,
       vendor: 'Kroger',
-      totalPrice: 1.8,
+      unitPriceDisplay: '$0.15',
+      totalPriceDisplay: '$1.80',
     },
   ]);
 
@@ -120,8 +114,10 @@ export default function ShoppingListPage() {
       ...newRow,
       quantity: isNaN(quantity) ? 0 : quantity,
       unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
-      totalPrice: isNaN(quantity * unitPrice) ? 0 : quantity * unitPrice,
     };
+
+    cleanRow.unitPriceDisplay = `$${cleanRow.unitPrice.toFixed(2)}`;
+    cleanRow.totalPriceDisplay = `$${(cleanRow.unitPrice * cleanRow.quantity).toFixed(2)}`;
 
     setRows((prev) =>
       prev.map((row) => (row.id === cleanRow.id ? cleanRow : row))
