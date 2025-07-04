@@ -46,7 +46,7 @@ const SquareOAuth = () => {
       return;
     }
 
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/business/square-connection`, {
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/oauth/square-connection`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
