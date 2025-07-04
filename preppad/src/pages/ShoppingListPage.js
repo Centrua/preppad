@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 
-import { Box, Paper } from '@mui/material';
+import { Box, Paper, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 import {
@@ -41,12 +41,21 @@ const columns = [
     },
   },
   {
-    field: 'unitPriceDisplay',
+    field: 'unitPrice',
     headerName: 'Cheapest Unit Price',
+    type: 'number',
     flex: 1,
-    editable: false,
+    editable: true,
     headerAlign: 'center',
     align: 'center',
+    valueParser: (value) => {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    },
+    valueFormatter: ({ value }) =>
+      typeof value === 'number' && !isNaN(value)
+        ? `$${value.toFixed(2)}`
+        : '$0.00',
   },
   {
     field: 'vendor',
@@ -57,12 +66,23 @@ const columns = [
     align: 'center',
   },
   {
-    field: 'totalPriceDisplay',
+    field: 'totalPrice',
     headerName: 'Total Price',
+    type: 'number',
     flex: 1,
-    editable: false,
     headerAlign: 'center',
     align: 'center',
+    sortable: false,
+    valueGetter: (params) => {
+      if (!params || !params.row) return 0;
+      const { quantity, unitPrice } = params.row;
+      const total = Number(quantity) * Number(unitPrice);
+      return isNaN(total) ? 0 : total;
+    },
+    valueFormatter: ({ value }) =>
+      typeof value === 'number' && !isNaN(value)
+        ? `$${value.toFixed(2)}`
+        : '$0.00',
   },
 ];
 
@@ -74,8 +94,6 @@ export default function ShoppingListPage() {
       quantity: 3,
       unitPrice: 0.5,
       vendor: 'Walmart',
-      unitPriceDisplay: '$0.50',
-      totalPriceDisplay: '$1.50',
     },
     {
       id: 2,
@@ -83,8 +101,6 @@ export default function ShoppingListPage() {
       quantity: 2,
       unitPrice: 1.2,
       vendor: 'Target',
-      unitPriceDisplay: '$1.20',
-      totalPriceDisplay: '$2.40',
     },
     {
       id: 3,
@@ -92,8 +108,6 @@ export default function ShoppingListPage() {
       quantity: 1,
       unitPrice: 2.0,
       vendor: 'Costco',
-      unitPriceDisplay: '$2.00',
-      totalPriceDisplay: '$2.00',
     },
     {
       id: 4,
@@ -101,8 +115,6 @@ export default function ShoppingListPage() {
       quantity: 12,
       unitPrice: 0.15,
       vendor: 'Kroger',
-      unitPriceDisplay: '$0.15',
-      totalPriceDisplay: '$1.80',
     },
   ]);
 
@@ -116,9 +128,6 @@ export default function ShoppingListPage() {
       unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
     };
 
-    cleanRow.unitPriceDisplay = `$${cleanRow.unitPrice.toFixed(2)}`;
-    cleanRow.totalPriceDisplay = `$${(cleanRow.unitPrice * cleanRow.quantity).toFixed(2)}`;
-
     setRows((prev) =>
       prev.map((row) => (row.id === cleanRow.id ? cleanRow : row))
     );
@@ -126,20 +135,75 @@ export default function ShoppingListPage() {
     return cleanRow;
   };
 
+  const handleSubmitPurchase = async () => {
+    try {
+      if (rows.length === 0) {
+        alert('No items to submit');
+        return;
+      }
+
+      const itemIds = rows.map((row) => row.id);
+      const quantities = rows.map((row) => row.quantity);
+      const unitPrices = rows.map((row) => row.unitPrice);
+      const vendors = rows.map((row) => row.vendor);
+      const totalPrice = rows.reduce(
+        (sum, row) => sum + row.quantity * row.unitPrice,
+        0
+      );
+
+      const payload = {
+        itemIds,
+        quantities,
+        cheapestUnitPrice: unitPrices, // sending full array of unit prices
+        vendor: vendors.join(', '),
+        totalPrice,
+      };
+
+      const response = await fetch('/pending-purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Purchase submitted successfully!');
+        console.log(result);
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error submitting purchase:', error);
+      alert('Failed to submit purchase');
+    }
+  };
+
   return (
-    <Layout>
-      <Box sx={{ width: '100%', px: 2, mt: 4 }}>
-        <Paper sx={{ width: '100%', p: 2 }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            processRowUpdate={handleProcessRowUpdate}
-            experimentalFeatures={{ newEditingApi: true }}
-            disableRowSelectionOnClick
-            autoHeight
-          />
-        </Paper>
-      </Box>
-    </Layout>
-  );
+  <Layout>
+    <Box sx={{ width: '100%', px: 2, mt: 4 }}>
+      <Paper sx={{ width: '100%', p: 2 }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          processRowUpdate={handleProcessRowUpdate}
+          experimentalFeatures={{ newEditingApi: true }}
+          disableRowSelectionOnClick
+          autoHeight
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmitPurchase}
+          >
+            Submit To Pending Purchases
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
+  </Layout>
+);
 }
