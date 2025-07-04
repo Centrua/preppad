@@ -41,17 +41,12 @@ const columns = [
     },
   },
   {
-    field: 'unitPrice',
+    field: 'unitPriceDisplay',
     headerName: 'Cheapest Unit Price',
-    type: 'number',
     flex: 1,
-    editable: true,
+    editable: false,
     headerAlign: 'center',
     align: 'center',
-    valueParser: (value) => {
-      const parsed = Number(value);
-      return isNaN(parsed) ? 0 : parsed;
-    },
   },
   {
     field: 'vendor',
@@ -62,44 +57,72 @@ const columns = [
     align: 'center',
   },
   {
-    field: 'totalPrice',
+    field: 'totalPriceDisplay',
     headerName: 'Total Price',
     flex: 1,
+    editable: false,
     headerAlign: 'center',
     align: 'center',
-    sortable: false,
-    valueGetter: (params) => {
-      if (!params || !params.row) return 0;
-      const quantity = Number(params.row.quantity);
-      const unitPrice = Number(params.row.unitPrice);
-      if (isNaN(quantity) || isNaN(unitPrice)) return 0;
-      return quantity * unitPrice;
-    },
   },
 ];
 
 export default function ShoppingListPage() {
   const [rows, setRows] = useState([
-    { id: 1, item: 'Apples', quantity: 3, unitPrice: 0.5, vendor: 'Walmart' },
-    { id: 2, item: 'Milk', quantity: 2, unitPrice: 1.2, vendor: 'Target' },
-    { id: 3, item: 'Bread', quantity: 1, unitPrice: 2.0, vendor: 'Costco' },
-    { id: 4, item: 'Eggs', quantity: 12, unitPrice: 0.15, vendor: 'Kroger' },
+    {
+      id: 1,
+      item: 'Apples',
+      quantity: 3,
+      unitPrice: 0.5,
+      vendor: 'Walmart',
+      unitPriceDisplay: '$0.50',
+      totalPriceDisplay: '$1.50',
+    },
+    {
+      id: 2,
+      item: 'Milk',
+      quantity: 2,
+      unitPrice: 1.2,
+      vendor: 'Target',
+      unitPriceDisplay: '$1.20',
+      totalPriceDisplay: '$2.40',
+    },
+    {
+      id: 3,
+      item: 'Bread',
+      quantity: 1,
+      unitPrice: 2.0,
+      vendor: 'Costco',
+      unitPriceDisplay: '$2.00',
+      totalPriceDisplay: '$2.00',
+    },
+    {
+      id: 4,
+      item: 'Eggs',
+      quantity: 12,
+      unitPrice: 0.15,
+      vendor: 'Kroger',
+      unitPriceDisplay: '$0.15',
+      totalPriceDisplay: '$1.80',
+    },
   ]);
 
   const handleProcessRowUpdate = (newRow) => {
-    // Ensure unitPrice and quantity are numbers
+    const quantity = Number(newRow.quantity);
+    const unitPrice = Number(newRow.unitPrice);
+
     const cleanRow = {
       ...newRow,
-      unitPrice:
-        typeof newRow.unitPrice === 'string'
-          ? parseFloat(newRow.unitPrice.replace(/[^0-9.]/g, '')) || 0
-          : newRow.unitPrice,
-      quantity: Number(newRow.quantity) || 0,
+      quantity: isNaN(quantity) ? 0 : quantity,
+      unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
     };
+
+    cleanRow.unitPriceDisplay = `$${cleanRow.unitPrice.toFixed(2)}`;
+    cleanRow.totalPriceDisplay = `$${(cleanRow.unitPrice * cleanRow.quantity).toFixed(2)}`;
 
     setRows((prev) =>
       prev.map((row) => (row.id === cleanRow.id ? cleanRow : row))
     );
+
     return cleanRow;
   };
 
