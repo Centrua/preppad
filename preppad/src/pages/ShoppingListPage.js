@@ -49,9 +49,11 @@ const columns = [
     headerAlign: 'center',
     align: 'center',
     valueParser: (value) => {
-      const parsed = Number(value);
+      const parsed = parseFloat(value);
       return isNaN(parsed) ? 0 : parsed;
     },
+    valueFormatter: ({ value }) =>
+      typeof value === 'number' ? `$${value.toFixed(2)}` : '$0.00',
   },
   {
     field: 'vendor',
@@ -64,42 +66,67 @@ const columns = [
   {
     field: 'totalPrice',
     headerName: 'Total Price',
+    type: 'number',
     flex: 1,
     headerAlign: 'center',
     align: 'center',
     sortable: false,
-    valueGetter: (params) => {
-      if (!params || !params.row) return 0;
-      const quantity = Number(params.row.quantity);
-      const unitPrice = Number(params.row.unitPrice);
-      if (isNaN(quantity) || isNaN(unitPrice)) return 0;
-      return quantity * unitPrice;
-    },
+    valueFormatter: ({ value }) =>
+      typeof value === 'number' ? `$${value.toFixed(2)}` : '$0.00',
   },
 ];
 
 export default function ShoppingListPage() {
   const [rows, setRows] = useState([
-    { id: 1, item: 'Apples', quantity: 3, unitPrice: 0.5, vendor: 'Walmart' },
-    { id: 2, item: 'Milk', quantity: 2, unitPrice: 1.2, vendor: 'Target' },
-    { id: 3, item: 'Bread', quantity: 1, unitPrice: 2.0, vendor: 'Costco' },
-    { id: 4, item: 'Eggs', quantity: 12, unitPrice: 0.15, vendor: 'Kroger' },
+    {
+      id: 1,
+      item: 'Apples',
+      quantity: 3,
+      unitPrice: 0.5,
+      vendor: 'Walmart',
+      totalPrice: 1.5,
+    },
+    {
+      id: 2,
+      item: 'Milk',
+      quantity: 2,
+      unitPrice: 1.2,
+      vendor: 'Target',
+      totalPrice: 2.4,
+    },
+    {
+      id: 3,
+      item: 'Bread',
+      quantity: 1,
+      unitPrice: 2.0,
+      vendor: 'Costco',
+      totalPrice: 2.0,
+    },
+    {
+      id: 4,
+      item: 'Eggs',
+      quantity: 12,
+      unitPrice: 0.15,
+      vendor: 'Kroger',
+      totalPrice: 1.8,
+    },
   ]);
 
   const handleProcessRowUpdate = (newRow) => {
-    // Ensure unitPrice and quantity are numbers
+    const quantity = Number(newRow.quantity);
+    const unitPrice = Number(newRow.unitPrice);
+
     const cleanRow = {
       ...newRow,
-      unitPrice:
-        typeof newRow.unitPrice === 'string'
-          ? parseFloat(newRow.unitPrice.replace(/[^0-9.]/g, '')) || 0
-          : newRow.unitPrice,
-      quantity: Number(newRow.quantity) || 0,
+      quantity: isNaN(quantity) ? 0 : quantity,
+      unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
+      totalPrice: isNaN(quantity * unitPrice) ? 0 : quantity * unitPrice,
     };
 
     setRows((prev) =>
       prev.map((row) => (row.id === cleanRow.id ? cleanRow : row))
     );
+
     return cleanRow;
   };
 
