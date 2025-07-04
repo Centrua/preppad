@@ -1,14 +1,15 @@
-import * as React from 'react';
-import { styled } from '@mui/material/styles';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import Divider, { dividerClasses } from '@mui/material/Divider';
+import { listClasses } from '@mui/material/List';
+import ListItemIcon, { listItemIconClasses } from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MuiMenuItem from '@mui/material/MenuItem';
 import { paperClasses } from '@mui/material/Paper';
-import { listClasses } from '@mui/material/List';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemIcon, { listItemIconClasses } from '@mui/material/ListItemIcon';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import { styled } from '@mui/material/styles';
+import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 import MenuButton from './MenuButton';
 
 const MenuItem = styled(MuiMenuItem)({
@@ -17,13 +18,24 @@ const MenuItem = styled(MuiMenuItem)({
 
 export default function OptionsMenu() {
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const navigate = useNavigate();
+
   const open = Boolean(anchorEl);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setAnchorEl(null);
+    navigate('/');
+  };
+
   return (
     <React.Fragment>
       <MenuButton
@@ -38,7 +50,6 @@ export default function OptionsMenu() {
         id="menu"
         open={open}
         onClose={handleClose}
-        onClick={handleClose}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         sx={{
@@ -53,14 +64,10 @@ export default function OptionsMenu() {
           },
         }}
       >
-        <MenuItem onClick={handleClose}>Profile</MenuItem>
-        <MenuItem onClick={handleClose}>My account</MenuItem>
-        <Divider />
-        <MenuItem onClick={handleClose}>Add another account</MenuItem>
-        <MenuItem onClick={handleClose}>Settings</MenuItem>
+        <MenuItem onClick={handleClose}>Manage Business</MenuItem>
         <Divider />
         <MenuItem
-          onClick={handleClose}
+          onClick={handleLogout}
           sx={{
             [`& .${listItemIconClasses.root}`]: {
               ml: 'auto',

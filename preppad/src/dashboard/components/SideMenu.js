@@ -1,17 +1,16 @@
-import * as React from 'react';
-import { styled } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
-import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
 import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
+import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
+import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import SelectContent from './SelectContent';
-import MenuContent from './MenuContent';
+import { jwtDecode } from 'jwt-decode';
+import * as React from 'react';
 import CardAlert from './CardAlert';
+import MenuContent from './MenuContent';
 import OptionsMenu from './OptionsMenu';
 
-const drawerWidth = 240;
+const drawerWidth = 200;
 
 const Drawer = styled(MuiDrawer)({
   width: drawerWidth,
@@ -25,6 +24,20 @@ const Drawer = styled(MuiDrawer)({
 });
 
 export default function SideMenu() {
+  const [user, setUser] = React.useState(null);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUser(decoded);
+      } catch (err) {
+        console.error('Invalid token:', err);
+      }
+    }
+  }, []);
+
   return (
     <Drawer
       variant="permanent"
@@ -39,12 +52,9 @@ export default function SideMenu() {
         sx={{
           display: 'flex',
           mt: 'calc(var(--template-frame-height, 0px) + 4px)',
-          p: 1.5,
         }}
       >
-        <SelectContent />
       </Box>
-      <Divider />
       <Box
         sx={{
           overflow: 'auto',
@@ -68,16 +78,16 @@ export default function SideMenu() {
       >
         <Avatar
           sizes="small"
-          alt="Riley Carter"
+          alt={user?.email || 'User'}
           src="/static/images/avatar/7.jpg"
           sx={{ width: 36, height: 36 }}
         />
         <Box sx={{ mr: 'auto' }}>
           <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: '16px' }}>
-            Riley Carter
+            {user?.fullName || 'Guest'}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            riley@email.com
+            {user?.email || 'Not logged in'}
           </Typography>
         </Box>
         <OptionsMenu />
