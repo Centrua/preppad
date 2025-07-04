@@ -29,7 +29,7 @@ const SquareOAuth = () => {
   const [connected, setConnected] = useState(null);
   const squareAppId = process.env.REACT_APP_SQUARE_APP_ID;
   const redirectUri = encodeURIComponent('http://localhost:3000/square-callback');
-  const scopes = encodeURIComponent('MERCHANT_PROFILE_READ PAYMENTS_READ');
+  const scopes = encodeURIComponent('MERCHANT_PROFILE_READ PAYMENTS_READ ITEMS_READ INVENTORY_READ');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,7 +46,7 @@ const SquareOAuth = () => {
       return;
     }
 
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/business/square-connection`, {
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/oauth/square-connection`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {

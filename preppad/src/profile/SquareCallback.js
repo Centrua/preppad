@@ -30,7 +30,7 @@ const SquareCallback = () => {
     }
 
     if (code && businessId) {
-      fetch(`${process.env.REACT_APP_API_BASE_URL}/square/oauth-callback`, {
+      fetch(`${process.env.REACT_APP_API_BASE_URL}/oauth/square-callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, businessId }),
