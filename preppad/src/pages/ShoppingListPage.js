@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { Box, Paper } from '@mui/material';
+import { Box, Paper, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 const columns = [
@@ -87,20 +87,75 @@ export default function ShoppingListPage() {
     return cleanRow;
   };
 
+  const handleSubmitPurchase = async () => {
+    try {
+      if (rows.length === 0) {
+        alert('No items to submit');
+        return;
+      }
+
+      const itemIds = rows.map((row) => row.id);
+      const quantities = rows.map((row) => row.quantity);
+      const unitPrices = rows.map((row) => row.unitPrice);
+      const vendors = rows.map((row) => row.vendor);
+      const totalPrice = rows.reduce(
+        (sum, row) => sum + row.quantity * row.unitPrice,
+        0
+      );
+
+      const payload = {
+        itemIds,
+        quantities,
+        cheapestUnitPrice: unitPrices, // sending full array of unit prices
+        vendor: vendors.join(', '),
+        totalPrice,
+      };
+
+      const response = await fetch('/pending-purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Purchase submitted successfully!');
+        console.log(result);
+      } else {
+        alert('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error submitting purchase:', error);
+      alert('Failed to submit purchase');
+    }
+  };
+
   return (
-    <Layout>
-      <Box sx={{ width: '100%', px: 2, mt: 4 }}>
-        <Paper sx={{ width: '100%', p: 2 }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            processRowUpdate={handleProcessRowUpdate}
-            experimentalFeatures={{ newEditingApi: true }}
-            disableRowSelectionOnClick
-            autoHeight
-          />
-        </Paper>
-      </Box>
-    </Layout>
-  );
+  <Layout>
+    <Box sx={{ width: '100%', px: 2, mt: 4 }}>
+      <Paper sx={{ width: '100%', p: 2 }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          processRowUpdate={handleProcessRowUpdate}
+          experimentalFeatures={{ newEditingApi: true }}
+          disableRowSelectionOnClick
+          autoHeight
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmitPurchase}
+          >
+            Submit To Pending Purchases
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
+  </Layout>
+);
 }
