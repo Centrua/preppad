@@ -16,7 +16,6 @@ import SquareCallback from './profile/SquareCallback';
 import SquareOAuth from './profile/SquareOAuth';
 
 // Pages for each menu route
-import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
 import ShoppingListPage from './pages/ShoppingListPage';
 import PendingPurchasesPage from './pages/PendingPurchasesPage';
