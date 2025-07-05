@@ -141,6 +141,45 @@ export default function SignIn(props) {
     return isValid;
   };
 
+  // Common TextField styling to improve highlighting on focus/error + transparent text selection + autofill fix
+  const textFieldSx = {
+    '& label.Mui-focused': {
+      color: '#1976d2', // Primary blue on focus
+      fontWeight: 600,
+    },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#1976d2',
+    },
+    '& .MuiOutlinedInput-root': {
+      '&.Mui-focused fieldset': {
+        borderColor: '#1976d2',
+        borderWidth: 2,
+      },
+      '&.Mui-error fieldset': {
+        borderColor: '#d32f2f', // Red error color
+        borderWidth: 2,
+      },
+      '&:hover fieldset': {
+        borderColor: 'transparent', // changed hover border to transparent
+      },
+      // Autofill styles for Chrome, Edge, Safari:
+      '& input:-webkit-autofill': {
+        WebkitBoxShadow: '0 0 0 1000px white inset !important', // Change white to your background color if needed
+        boxShadow: '0 0 0 1000px white inset !important',
+        WebkitTextFillColor: '#000000 !important',
+        transition: 'background-color 5000s ease-in-out 0s',
+      },
+    },
+    transition: 'all 0.3s ease',
+    // Transparent or subtle text highlight for input fields
+    '& input::selection': {
+      backgroundColor: 'rgba(25, 118, 210, 0.2)', // subtle transparent blue highlight
+    },
+    '& textarea::selection': {
+      backgroundColor: 'rgba(25, 118, 210, 0.2)',
+    },
+  };
+
   return (
     <AppTheme {...props}>
       <CssBaseline enableColorScheme />
@@ -179,6 +218,7 @@ export default function SignIn(props) {
                 fullWidth
                 variant="outlined"
                 color={emailError ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <FormControl>
@@ -191,11 +231,11 @@ export default function SignIn(props) {
                 type="password"
                 id="password"
                 autoComplete="current-password"
-                autoFocus
                 required
                 fullWidth
                 variant="outlined"
                 color={passwordError ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <FormControlLabel
