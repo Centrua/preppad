@@ -34,39 +34,6 @@ const columns = [
       return isNaN(parsed) ? 0 : parsed;
     },
   },
-  {
-    field: 'unitPrice',
-    headerName: 'Cheapest Unit Price',
-    type: 'number',
-    flex: 1,
-    editable: true,
-    headerAlign: 'center',
-    align: 'center',
-    valueFormatter: (value) => {
-      return "$" + String(Number(value).toFixed(2));
-    },
-  },
-  {
-    field: 'vendor',
-    headerName: 'Vendor/Store',
-    flex: 1.2,
-    editable: true,
-    headerAlign: 'center',
-    align: 'center',
-  },
-  {
-    field: 'totalPrice',
-    headerName: 'Total Price',
-    flex: 1,
-    headerAlign: 'center',
-    align: 'center',
-    type: 'number',
-    sortable: false,
-    valueGetter: (value, row) => row.quantity * row.unitPrice,
-    valueFormatter: (value, row) => {
-      return "$" + String(Number(value).toFixed(2));
-    },
-  },
 ];
 
 export default function ShoppingListPage() {
@@ -97,7 +64,7 @@ export default function ShoppingListPage() {
 
         const data = await response.json();
         if (response.ok && data) {
-          const { itemIds, itemNames, quantities, cheapestUnitPrice, vendor } = data;
+          const { itemIds, itemNames, quantities } = data;
 
           setRows((prevRows) => {
             const rowMap = new Map();
@@ -107,9 +74,6 @@ export default function ShoppingListPage() {
 
             itemIds.forEach((itemId, index) => {
               const quantity = quantities[index];
-              const unitPrice = parseFloat(cheapestUnitPrice[index]);
-              const vendorName = vendor[index];
-              const totalPrice = quantity * unitPrice;
 
               if (rowMap.has(itemId)) {
                 const existing = rowMap.get(itemId);
@@ -117,18 +81,12 @@ export default function ShoppingListPage() {
                 rowMap.set(itemId, {
                   ...existing,
                   quantity: newQuantity,
-                  unitPrice,
-                  vendor: vendorName,
-                  totalPrice: newQuantity * unitPrice,
                 });
               } else {
                 rowMap.set(itemId, {
                   id: itemId,
                   item: itemNames[index] || 'Unnamed Item',
                   quantity,
-                  unitPrice,
-                  vendor: vendorName,
-                  totalPrice,
                 });
               }
             });
@@ -148,12 +106,10 @@ export default function ShoppingListPage() {
 
   const handleProcessRowUpdate = (newRow) => {
     const quantity = Number(newRow.quantity);
-    const unitPrice = Number(newRow.unitPrice);
 
     const cleanRow = {
       ...newRow,
       quantity: isNaN(quantity) ? 0 : quantity,
-      unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
     };
 
     setRows((prev) => prev.map((row) => (row.id === cleanRow.id ? cleanRow : row)));
@@ -169,16 +125,10 @@ export default function ShoppingListPage() {
 
       const itemIds = rows.map((row) => row.id);
       const quantities = rows.map((row) => row.quantity);
-      const unitPrices = rows.map((row) => row.unitPrice);
-      const vendors = rows.map((row) => row.vendor);
-      const totalPrice = rows.map((row) => row.quantity * row.unitPrice);
 
       const payload = {
         itemIds,
         quantities,
-        cheapestUnitPrice: unitPrices,
-        vendor: vendors,
-        totalPrice,
       };
 
       const API_BASE = process.env.REACT_APP_API_BASE_URL;
@@ -245,7 +195,9 @@ export default function ShoppingListPage() {
           <Typography>{dialogMessage}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog} color="primary">OK</Button>
+          <Button onClick={closeDialog} color="primary">
+            OK
+          </Button>
         </DialogActions>
       </Dialog>
     </Layout>
