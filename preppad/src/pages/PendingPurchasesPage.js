@@ -10,138 +10,25 @@ import {
   TableRow,
   Typography,
   CircularProgress,
-  IconButton,
-  Collapse,
-  TableContainer,
-  TextField,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  TableContainer,
 } from '@mui/material';
-import {
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-} from '@mui/icons-material';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
-
-function Row({ purchase }) {
-  const [open, setOpen] = useState(false);
-  const [quantities, setQuantities] = useState([...purchase.quantities]);
-  const [totalPrices, setTotalPrices] = useState(
-    purchase.quantities.map((q, i) => q * purchase.cheapestUnitPrice[i])
-  );
-
-  const handleQuantityChange = (index, value) => {
-    const newQuantities = [...quantities];
-    const newValue = Number(value) || 0;
-    newQuantities[index] = newValue;
-    setQuantities(newQuantities);
-
-    const newTotalPrices = [...totalPrices];
-    newTotalPrices[index] = newValue * purchase.cheapestUnitPrice[index];
-    setTotalPrices(newTotalPrices);
-  };
-
-  const handleConfirm = (index) => {
-    console.log('Confirmed item:', {
-      itemId: purchase.itemIds[index],
-      quantity: quantities[index],
-      vendor: purchase.vendor[index],
-      totalPrice: totalPrices[index],
-    });
-    // You can implement actual backend update logic here
-  };
-
-  const renderFirst = (arr) => (arr && arr.length > 0 ? arr[0] : '');
-
-  return (
-    <>
-      <TableRow hover>
-        <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
-        <TableCell>{purchase.id}</TableCell>
-        <TableCell>{renderFirst(purchase.itemIds)}</TableCell>
-        <TableCell>{renderFirst(purchase.quantities)}</TableCell>
-        <TableCell>{renderFirst(purchase.cheapestUnitPrice)}</TableCell>
-        <TableCell>{renderFirst(purchase.vendor)}</TableCell>
-        <TableCell>{renderFirst(purchase.totalPrice)}</TableCell>
-      </TableRow>
-
-      <TableRow>
-        <TableCell colSpan={7} style={{ paddingBottom: 0, paddingTop: 0 }}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box margin={1}>
-              <Typography variant="subtitle1" gutterBottom>
-                All Items
-              </Typography>
-              <Table size="small" aria-label="items">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Item ID</TableCell>
-                    <TableCell>Quantity</TableCell>
-                    <TableCell>Cheapest Unit Price</TableCell>
-                    <TableCell>Vendor</TableCell>
-                    <TableCell>Total Price</TableCell>
-                    <TableCell>Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {purchase.itemIds.map((itemId, idx) => (
-                    <TableRow key={`${purchase.id}-${idx}`}>
-                      <TableCell>{itemId}</TableCell>
-                      <TableCell>
-                        <TextField
-                          type="number"
-                          size="small"
-                          value={quantities[idx]}
-                          onChange={(e) =>
-                            handleQuantityChange(idx, e.target.value)
-                          }
-                          inputProps={{ min: 0 }}
-                        />
-                      </TableCell>
-                      <TableCell>{purchase.cheapestUnitPrice[idx]}</TableCell>
-                      <TableCell>{purchase.vendor[idx]}</TableCell>
-                      <TableCell>{totalPrices[idx].toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleConfirm(idx)}
-                          sx={{
-                            color: '#2e7d32',
-                            borderColor: '#2e7d32',
-                            '&:hover': {
-                              backgroundColor: '#e8f5e9',
-                              borderColor: '#1b5e20',
-                            },
-                          }}
-                        >
-                          Confirm
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
-    </>
-  );
-}
 
 export default function PendingPurchasesPage() {
   const [pendingPurchases, setPendingPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
+  const [quantities, setQuantities] = useState([]);
+  const [totalPrice, setTotalPrice] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -164,6 +51,44 @@ export default function PendingPurchasesPage() {
 
     fetchPendingPurchases();
   }, [token]);
+
+  const handleOpenDialog = (purchase) => {
+    setSelectedPurchase(purchase);
+    setQuantities([...purchase.quantities]);
+    setTotalPrice('');
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedPurchase(null);
+    setQuantities([]);
+    setTotalPrice('');
+  };
+
+  const handleQuantityChange = (index, value) => {
+    const newQuantities = [...quantities];
+    const newValue = Number(value) || 0;
+    newQuantities[index] = newValue;
+    setQuantities(newQuantities);
+  };
+
+  const handleTotalPriceChange = (e) => {
+    const val = e.target.value;
+    if (/^\d*\.?\d{0,2}$/.test(val)) {
+      setTotalPrice(val);
+    }
+  };
+
+  const handleConfirm = () => {
+    console.log('Confirmed purchase:', {
+      purchaseId: selectedPurchase.id,
+      quantities,
+      totalPrice,
+    });
+    // Implement backend update logic here if needed
+    handleCloseDialog();
+  };
 
   if (loading) {
     return (
@@ -193,7 +118,7 @@ export default function PendingPurchasesPage() {
         <Typography variant="h5" gutterBottom>
           Pending Purchases
         </Typography>
-        <TableContainer component={Paper}>
+        <Paper>
           <Table aria-label="pending purchases table">
             <TableHead>
               <TableRow>
@@ -201,18 +126,146 @@ export default function PendingPurchasesPage() {
                 <TableCell>Purchase ID</TableCell>
                 <TableCell>Item ID</TableCell>
                 <TableCell>Quantity</TableCell>
-                <TableCell>Cheapest Unit Price</TableCell>
-                <TableCell>Vendor</TableCell>
-                <TableCell>Total Price</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {pendingPurchases.map((purchase) => (
-                <Row key={purchase.id} purchase={purchase} />
+                <TableRow key={purchase.id} hover>
+                  <TableCell />
+                  <TableCell>{purchase.id}</TableCell>
+                  <TableCell>
+                    {purchase.itemIds && purchase.itemIds.length > 0
+                      ? purchase.itemIds[0]
+                      : ''}
+                  </TableCell>
+                  <TableCell>
+                    {purchase.quantities && purchase.quantities.length > 0
+                      ? purchase.quantities[0]
+                      : ''}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleOpenDialog(purchase)}
+                    >
+                      Confirm
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </Paper>
+
+        {/* Dialog */}
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+          <DialogTitle>Confirm Purchase List</DialogTitle>
+          <DialogContent dividers>
+            {selectedPurchase && (
+              <>
+                <Typography
+                  variant="h6"
+                  align="center"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  All Items
+                </Typography>
+                <TableContainer component={Paper}>
+                  <Table
+                    size="small"
+                    aria-label="items table"
+                    sx={{
+                      width: '100%',
+                      tableLayout: 'fixed',
+                      marginLeft: 'auto',
+                      marginRight: 'auto',
+                    }}
+                  >
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          align="left"
+                          sx={{ minWidth: 120, fontWeight: 'bold' }}
+                        >
+                          Item ID
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ width: 150, fontWeight: 'bold' }}
+                        >
+                          Quantity Purchased
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {selectedPurchase.itemIds.map((itemId, idx) => (
+                        <TableRow key={`${selectedPurchase.id}-${idx}`}>
+                          <TableCell align="left" sx={{ px: 2 }}>
+                            {itemId}
+                          </TableCell>
+                          <TableCell align="center" sx={{ px: 2 }}>
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={quantities[idx]}
+                              onChange={(e) =>
+                                handleQuantityChange(idx, e.target.value)
+                              }
+                              inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                              sx={{ width: 80, mx: 'auto', display: 'block' }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                    marginTop: 3,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ minWidth: 130, textAlign: 'right' }}
+                  >
+                    Total Price ($):
+                  </Typography>
+                  <TextField
+                    type="text"
+                    size="small"
+                    value={totalPrice}
+                    onChange={handleTotalPriceChange}
+                    placeholder="Enter total price"
+                    inputProps={{ inputMode: 'decimal', pattern: '[0-9]*', style: { textAlign: 'center' } }}
+                    sx={{ width: 140 }}
+                  />
+                </Box>
+              </>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+            <Button onClick={handleCloseDialog} color="inherit">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              variant="contained"
+              color="success"
+              sx={{ fontWeight: 'bold', minWidth: 140 }}
+            >
+              Confirm List
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Layout>
   );
