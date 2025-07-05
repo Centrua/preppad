@@ -65,50 +65,100 @@ const columns = [
 export default function ShoppingListPage() {
   const [rows, setRows] = useState([]);
 
-  useEffect(() => {
-    const fetchShoppingList = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+useEffect(() => {
+  const fetchShoppingList = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
-        const response = await fetch(`${API_BASE}/inventory/shopping-list`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const response = await fetch(`${API_BASE}/inventory/shopping-list`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        const data = await response.json();
-        console.log(data);
+      const data = await response.json();
+      console.log(data);
 
-        if (response.ok && data) {
-          const {
-            itemIds,
-            itemNames,
-            quantities,
-            cheapestUnitPrice,
-            vendor,
-          } = data;
+      if (response.ok && data) {
+        const {
+          itemIds,
+          itemNames,
+          quantities,
+          cheapestUnitPrice,
+          vendor,
+        } = data;
 
-          const transformedRows = itemIds.map((itemId, index) => ({
-            id: itemId,
-            item: itemNames[index] || 'Unnamed Item',
-            quantity: quantities[index],
-            unitPrice: parseFloat(cheapestUnitPrice[index]),
-            vendor: vendor[index],
-          }));
+setRows((prevRows) => {
+  // Create a map for quick lookup by id
+  const rowMap = new Map();
 
+  // Add existing rows to map (id → row)
+  prevRows.forEach(row => {
+    rowMap.set(row.id, { ...row });
+  });
 
-          setRows(transformedRows);
-        } else {
-          console.error('Failed to load shopping list:', data.error);
-        }
-      } catch (err) {
-        console.error('Error fetching shopping list:', err);
+  // For each new fetched item
+  itemIds.forEach((itemId, index) => {
+    const quantity = quantities[index];
+    const unitPrice = parseFloat(cheapestUnitPrice[index]);
+    const vendorName = vendor[index];
+    const totalPrice = quantity * unitPrice;
+
+    if (rowMap.has(itemId)) {
+      // Combine quantities, unitPrice weighted average, vendors, totalPrice sums
+      const existing = rowMap.get(itemId);
+
+      // Add quantities
+      const newQuantity = existing.quantity + quantity;
+
+      // Weighted average unit price (optional, or just use latest)
+      // Here just average for example:
+      const newUnitPrice = (existing.unitPrice * existing.quantity + unitPrice * quantity) / newQuantity;
+
+      // Combine vendors as array if not already
+      const existingVendors = Array.isArray(existing.vendor) ? existing.vendor : [existing.vendor];
+      const newVendors = existingVendors.includes(vendorName)
+        ? existingVendors
+        : [...existingVendors, vendorName];
+
+      // Sum total price
+      const newTotalPrice = existing.totalPrice + totalPrice;
+
+      rowMap.set(itemId, {
+        ...existing,
+        quantity: newQuantity,
+        unitPrice: parseFloat(newUnitPrice.toFixed(2)),
+        vendor: newVendors,
+        totalPrice: parseFloat(newTotalPrice.toFixed(2)),
+      });
+    } else {
+      // New row, create with vendor as array for consistency
+      rowMap.set(itemId, {
+        id: itemId,
+        item: itemNames[index] || 'Unnamed Item',
+        quantity,
+        unitPrice,
+        vendor: [vendorName], // store vendor as array
+        totalPrice,
+      });
+    }
+  });
+
+  return Array.from(rowMap.values());
+});
+
+      } else {
+        console.error('Failed to load shopping list:', data.error);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching shopping list:', err);
+    }
+  };
 
-    fetchShoppingList();
-  }, []);
+  fetchShoppingList();
+}, []);
+
 
   const handleProcessRowUpdate = (newRow) => {
     const quantity = Number(newRow.quantity);
