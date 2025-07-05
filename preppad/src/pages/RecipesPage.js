@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import {Box,TextField,Button,Typography,Paper,Grid,InputAdornment,IconButton,Divider,} 
-from '@mui/material';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Grid,
+  InputAdornment,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton,
+} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 
@@ -9,7 +22,7 @@ export default function RecipePage() {
   const [form, setForm] = useState({
     title: '',
     price: '',
-    ingredients: [{ title: '', unitAmount: '', ounceAmount: '' }],
+    ingredients: [{ title: '', quantity: '', unit: '' }],
   });
 
   const [recipes, setRecipes] = useState([]);
@@ -28,7 +41,7 @@ export default function RecipePage() {
   const addIngredientRow = () => {
     setForm({
       ...form,
-      ingredients: [...form.ingredients, { title: '', unitAmount: '', ounceAmount: '' }],
+      ingredients: [...form.ingredients, { title: '', quantity: '', unit: '' }],
     });
   };
 
@@ -40,6 +53,22 @@ export default function RecipePage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!form.title.trim() || !form.price.trim()) {
+      alert('Please fill out the recipe title and price.');
+      return;
+    }
+
+    const invalidIngredient = form.ingredients.some(
+      (ing) =>
+        !ing.title.trim() || !ing.quantity.trim() || !ing.unit.trim()
+    );
+
+    if (invalidIngredient) {
+      alert('Please fill out all ingredient fields: title, quantity, and unit.');
+      return;
+    }
+
     if (editingIndex !== null) {
       const updatedRecipes = [...recipes];
       updatedRecipes[editingIndex] = form;
@@ -52,7 +81,7 @@ export default function RecipePage() {
     setForm({
       title: '',
       price: '',
-      ingredients: [{ title: '', unitAmount: '', ounceAmount: '' }],
+      ingredients: [{ title: '', quantity: '', unit: '' }],
     });
   };
 
@@ -66,7 +95,7 @@ export default function RecipePage() {
       setForm({
         title: '',
         price: '',
-        ingredients: [{ title: '', unitAmount: '', ounceAmount: '' }],
+        ingredients: [{ title: '', quantity: '', unit: '' }],
       });
     }
   };
@@ -81,9 +110,21 @@ export default function RecipePage() {
     setForm({
       title: '',
       price: '',
-      ingredients: [{ title: '', unitAmount: '', ounceAmount: '' }],
+      ingredients: [{ title: '', quantity: '', unit: '' }],
     });
   };
+
+  const unitOptions = [
+    'Count',
+    'Cups',
+    'Dry Ounces',
+    'Fluid Ounces',
+    'Pints',
+    'Quarts',
+    'Slices',
+    'Tablespoons',
+    'Teaspoons',
+  ].sort();
 
   return (
     <Layout>
@@ -118,7 +159,7 @@ export default function RecipePage() {
                   value={form.price}
                   onChange={handleChange}
                   required
-                  inputProps={{ step: '0.01' }}
+                  inputProps={{ step: '0.01', min: 0 }}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
@@ -140,37 +181,51 @@ export default function RecipePage() {
                       onChange={(e) =>
                         handleIngredientChange(index, 'title', e.target.value)
                       }
+                      required
                     />
                   </Grid>
                   <Grid item xs={3}>
                     <TextField
                       fullWidth
-                      label="Unit Amount"
-                      value={ingredient.unitAmount}
+                      label="Quantity"
+                      type="number"
+                      value={ingredient.quantity}
                       onChange={(e) =>
-                        handleIngredientChange(index, 'unitAmount', e.target.value)
+                        handleIngredientChange(index, 'quantity', e.target.value)
                       }
+                      inputProps={{ step: 'any', min: 0 }}
+                      required
                     />
                   </Grid>
                   <Grid item xs={3}>
-                    <TextField
-                      fullWidth
-                      label="Ounce Amount"
-                      value={ingredient.ounceAmount}
-                      onChange={(e) =>
-                        handleIngredientChange(index, 'ounceAmount', e.target.value)
-                      }
-                    />
+                    <FormControl required sx={{ width: 160 }}>
+                      <InputLabel id={`unit-label-${index}`}>Unit</InputLabel>
+                      <Select
+                        labelId={`unit-label-${index}`}
+                        value={ingredient.unit}
+                        label="Unit"
+                        onChange={(e) =>
+                          handleIngredientChange(index, 'unit', e.target.value)
+                        }
+                      >
+                        {unitOptions.map((unit) => (
+                          <MenuItem key={unit} value={unit}>
+                            {unit}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
-                  <Grid item xs={2}>
-                    <Button
-                      variant="outlined"
+                  <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <IconButton
                       color="error"
                       onClick={() => handleRemoveIngredient(index)}
                       disabled={form.ingredients.length === 1}
+                      size="small"
+                      aria-label="delete ingredient"
                     >
-                      ❌
-                    </Button>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
                   </Grid>
                 </Grid>
               ))}
@@ -225,7 +280,9 @@ export default function RecipePage() {
               </Typography>
               {recipe.ingredients.map((ing, i) => (
                 <Typography key={i} sx={{ ml: 2 }}>
-                  • {ing.title} — {ing.unitAmount} units / {ing.ounceAmount} oz
+                  • {ing.title}
+                  {ing.quantity && ` — ${ing.quantity}`}
+                  {ing.unit && ` ${ing.unit}`}
                 </Typography>
               ))}
               <Divider sx={{ mt: 2, mb: 1 }} />
