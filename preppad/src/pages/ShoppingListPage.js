@@ -89,64 +89,44 @@ useEffect(() => {
           vendor,
         } = data;
 
-setRows((prevRows) => {
-  // Create a map for quick lookup by id
-  const rowMap = new Map();
+      setRows((prevRows) => {
+        const rowMap = new Map();
 
-  // Add existing rows to map (id → row)
-  prevRows.forEach(row => {
-    rowMap.set(row.id, { ...row });
-  });
+        prevRows.forEach(row => {
+          rowMap.set(row.id, { ...row });
+        });
 
-  // For each new fetched item
-  itemIds.forEach((itemId, index) => {
-    const quantity = quantities[index];
-    const unitPrice = parseFloat(cheapestUnitPrice[index]);
-    const vendorName = vendor[index];
-    const totalPrice = quantity * unitPrice;
+        itemIds.forEach((itemId, index) => {
+          const quantity = quantities[index];
+          const unitPrice = parseFloat(cheapestUnitPrice[index]);
+          const vendorName = vendor[index];
+          const totalPrice = quantity * unitPrice;
 
-    if (rowMap.has(itemId)) {
-      // Combine quantities, unitPrice weighted average, vendors, totalPrice sums
-      const existing = rowMap.get(itemId);
+          if (rowMap.has(itemId)) {
+            const existing = rowMap.get(itemId);
+            const newQuantity = existing.quantity + quantity;
 
-      // Add quantities
-      const newQuantity = existing.quantity + quantity;
+            rowMap.set(itemId, {
+              ...existing,
+              quantity: newQuantity,
+              unitPrice, // Overwrite with last unit price
+              vendor: vendorName, // Overwrite with last vendor
+              totalPrice: newQuantity * unitPrice, // Recalculate with latest price
+            });
+          } else {
+            rowMap.set(itemId, {
+              id: itemId,
+              item: itemNames[index] || 'Unnamed Item',
+              quantity,
+              unitPrice,
+              vendor: vendorName,
+              totalPrice,
+            });
+          }
+        });
 
-      // Weighted average unit price (optional, or just use latest)
-      // Here just average for example:
-      const newUnitPrice = (existing.unitPrice * existing.quantity + unitPrice * quantity) / newQuantity;
-
-      // Combine vendors as array if not already
-      const existingVendors = Array.isArray(existing.vendor) ? existing.vendor : [existing.vendor];
-      const newVendors = existingVendors.includes(vendorName)
-        ? existingVendors
-        : [...existingVendors, vendorName];
-
-      // Sum total price
-      const newTotalPrice = existing.totalPrice + totalPrice;
-
-      rowMap.set(itemId, {
-        ...existing,
-        quantity: newQuantity,
-        unitPrice: parseFloat(newUnitPrice.toFixed(2)),
-        vendor: newVendors,
-        totalPrice: parseFloat(newTotalPrice.toFixed(2)),
+        return Array.from(rowMap.values());
       });
-    } else {
-      // New row, create with vendor as array for consistency
-      rowMap.set(itemId, {
-        id: itemId,
-        item: itemNames[index] || 'Unnamed Item',
-        quantity,
-        unitPrice,
-        vendor: [vendorName], // store vendor as array
-        totalPrice,
-      });
-    }
-  });
-
-  return Array.from(rowMap.values());
-});
 
       } else {
         console.error('Failed to load shopping list:', data.error);
@@ -177,52 +157,65 @@ setRows((prevRows) => {
     return cleanRow;
   };
 
-  const handleSubmitPurchase = async () => {
-    try {
-      if (rows.length === 0) {
-        alert('No items to submit');
-        return;
-      }
+const handleSubmitPurchase = async () => {
+  try {
+    if (rows.length === 0) {
+      alert('No items to submit');
+      return;
+    }
 
-      const itemIds = rows.map((row) => row.id);
-      const quantities = rows.map((row) => row.quantity);
-      const unitPrices = rows.map((row) => row.unitPrice);
-      const vendors = rows.map((row) => row.vendor);
-      const totalPrice = rows.map((row) => row.quantity * row.unitPrice);
+    const itemIds = rows.map((row) => row.id);
+    const quantities = rows.map((row) => row.quantity);
+    const unitPrices = rows.map((row) => row.unitPrice);
+    const vendors = rows.map((row) => row.vendor);
+    const totalPrice = rows.map((row) => row.quantity * row.unitPrice);
 
-      const payload = {
-        itemIds,
-        quantities,
-        cheapestUnitPrice: unitPrices,
-        vendor: vendors,
-        totalPrice,
-      };
+    const payload = {
+      itemIds,
+      quantities,
+      cheapestUnitPrice: unitPrices,
+      vendor: vendors,
+      totalPrice,
+    };
 
-      const API_BASE = process.env.REACT_APP_API_BASE_URL;
-      const token = localStorage.getItem('token');
+    const API_BASE = process.env.REACT_APP_API_BASE_URL;
+    const token = localStorage.getItem('token');
 
-      const response = await fetch(`${API_BASE}/inventory/pending-purchase`, {
-        method: 'POST',
+    const purchaseRes = await fetch(`${API_BASE}/inventory/pending-purchase`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await purchaseRes.json();
+
+    if (purchaseRes.ok) {
+      // Clear shopping list after successful submission
+      const clearRes = await fetch(`${API_BASE}/inventory/shopping-list/clear`, {
+        method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        alert('Purchase submitted successfully!');
-        console.log(result);
-      } else {
-        alert('Error: ' + (result.error || 'Unknown error'));
+      if (!clearRes.ok) {
+        console.warn('Shopping list was submitted but not cleared.');
       }
-    } catch (error) {
-      console.error('Error submitting purchase:', error);
-      alert('Failed to submit purchase');
+
+      alert('Purchase submitted successfully!');
+      console.log(result);
+      setRows([]); // Clear UI as well
+    } else {
+      alert('Error: ' + (result.error || 'Unknown error'));
     }
-  };
+  } catch (error) {
+    console.error('Error submitting purchase:', error);
+    alert('Failed to submit purchase');
+  }
+};
 
   return (
     <Layout>
