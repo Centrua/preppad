@@ -35,7 +35,7 @@ export default function RecipePage() {
     const fetchRecipes = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/inventory/recipes`, {
+        const res = await fetch(`${API_BASE}/recipes`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -112,8 +112,8 @@ export default function RecipePage() {
       const token = localStorage.getItem('token');
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId
-        ? `${API_BASE}/inventory/recipes/${editingId}`
-        : `${API_BASE}/inventory/recipes`;
+        ? `${API_BASE}/recipes/${editingId}`
+        : `${API_BASE}/recipes`;
 
       const res = await fetch(url, {
         method,
@@ -188,7 +188,7 @@ export default function RecipePage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/inventory/recipes/${recipeToDelete.id}`, {
+      const res = await fetch(`${API_BASE}/recipes/${recipeToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -26,16 +26,13 @@ const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
+  const [availableItems, setAvailableItems] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
-    itemName: '',
-    unitCost: '',
-    vendor: '',
-    upc: '',
-    expirationDate: '',
+    itemId: '',
     unit: '',
     quantityInStock: '',
-    isPerishable: 'N',
+    threshold: '',
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -45,18 +42,31 @@ export default function InventoryPage() {
 
   const fetchItems = async () => {
     try {
-      const res = await fetch(`${API_BASE}/inventory/items`, {
+      const res = await fetch(`${API_BASE}/inventory`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setItems(data);
     } catch (err) {
-      console.error('Failed to fetch items:', err);
+      console.error('Failed to fetch inventory items:', err);
+    }
+  };
+
+  const fetchAvailableItems = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/recipes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setAvailableItems(data);
+    } catch (err) {
+      console.error('Failed to fetch recipes:', err);
     }
   };
 
   useEffect(() => {
     fetchItems();
+    fetchAvailableItems();
   }, []);
 
   const handleChange = (e) => {
@@ -67,8 +77,8 @@ export default function InventoryPage() {
     e.preventDefault();
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
-      ? `${API_BASE}/inventory/items/${editingItem.itemId}`
-      : `${API_BASE}/inventory/items`;
+      ? `${API_BASE}/inventory/${editingItem.id}`
+      : `${API_BASE}/inventory`;
 
     try {
       await fetch(endpoint, {
@@ -81,33 +91,25 @@ export default function InventoryPage() {
       });
 
       setForm({
-        itemName: '',
-        unitCost: '',
-        vendor: '',
-        upc: '',
-        expirationDate: '',
+        itemId: '',
         unit: '',
         quantityInStock: '',
-        isPerishable: 'N',
+        threshold: '',
       });
       setEditingItem(null);
       fetchItems();
     } catch (err) {
-      console.error('Failed to save item:', err);
+      console.error('Failed to save inventory:', err);
     }
   };
 
   const handleEdit = (item) => {
     setEditingItem(item);
     setForm({
-      itemName: item.itemName,
-      unitCost: item.unitCost,
-      vendor: item.vendor,
-      upc: item.upc || '',
-      expirationDate: item.expirationDate?.slice(0, 10) || '',
+      itemId: item.itemId,
       unit: item.unit,
       quantityInStock: item.quantityInStock,
-      isPerishable: item.isPerishable,
+      threshold: item.threshold,
     });
   };
 
@@ -118,7 +120,7 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     try {
-      await fetch(`${API_BASE}/inventory/items/${itemToDelete.itemId}`, {
+      await fetch(`${API_BASE}/inventory/${itemToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -126,57 +128,63 @@ export default function InventoryPage() {
       setItemToDelete(null);
       fetchItems();
     } catch (err) {
-      console.error('Failed to delete item:', err);
+      console.error('Failed to delete inventory:', err);
     }
+  };
+
+  const getItemNameById = (itemId) => {
+    const match = availableItems.find((item) => item.id === itemId);
+    return match ? match.title : 'Unknown';
   };
 
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
-          {editingItem ? 'Edit Item' : 'Add Item'}
+          {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
         </Typography>
 
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <form onSubmit={handleSubmit}>
             <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap={2}>
-              <TextField name="itemName" label="Item Name" value={form.itemName} onChange={handleChange} required />
-              <TextField name="unitCost" label="Unit Cost" value={form.unitCost} onChange={handleChange} required />
-              <TextField name="vendor" label="Vendor" value={form.vendor} onChange={handleChange} required />
-              <TextField name="upc" label="UPC" value={form.upc} onChange={handleChange} />
-              <TextField
-                name="expirationDate"
-                label="Expiration Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={form.expirationDate}
-                onChange={handleChange}
-              />
+              <FormControl fullWidth required>
+                <InputLabel id="item-label">Item</InputLabel>
+                <Select
+                  labelId="item-label"
+                  name="itemId"
+                  value={form.itemId}
+                  label="Item"
+                  onChange={handleChange}
+                >
+                  {availableItems.map((item) => (
+                    <MenuItem key={item.id} value={item.id}>
+                      {item.title}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <TextField name="unit" label="Unit" value={form.unit} onChange={handleChange} required />
               <TextField
                 name="quantityInStock"
                 label="Quantity in Stock"
+                type="number"
                 value={form.quantityInStock}
                 onChange={handleChange}
                 required
               />
-              <FormControl>
-                <InputLabel>Is Perishable</InputLabel>
-                <Select
-                  name="isPerishable"
-                  value={form.isPerishable}
-                  label="Is Perishable"
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Y">Yes</MenuItem>
-                  <MenuItem value="N">No</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                name="threshold"
+                label="Threshold"
+                type="number"
+                value={form.threshold}
+                onChange={handleChange}
+                required
+              />
             </Box>
 
             <Box mt={3}>
               <Button variant="contained" color="primary" type="submit">
-                {editingItem ? 'Update Item' : 'Add Item'}
+                {editingItem ? 'Update Inventory' : 'Add Inventory'}
               </Button>
               {editingItem && (
                 <Button sx={{ ml: 2 }} onClick={() => setEditingItem(null)} color="secondary">
@@ -188,30 +196,26 @@ export default function InventoryPage() {
         </Paper>
 
         <Typography variant="h6" gutterBottom>
-          Inventory Items
+          Inventory List
         </Typography>
         <Paper elevation={2}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Vendor</TableCell>
+                <TableCell>Item</TableCell>
                 <TableCell>Unit</TableCell>
-                <TableCell>Cost</TableCell>
-                <TableCell>Qty</TableCell>
-                <TableCell>Perishable</TableCell>
+                <TableCell>Qty In Stock</TableCell>
+                <TableCell>Threshold</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {items.map((item) => (
-                <TableRow key={item.itemId}>
-                  <TableCell>{item.itemName}</TableCell>
-                  <TableCell>{item.vendor}</TableCell>
+                <TableRow key={item.id}>
+                  <TableCell>{getItemNameById(item.itemId)}</TableCell>
                   <TableCell>{item.unit}</TableCell>
-                  <TableCell>${item.unitCost}</TableCell>
                   <TableCell>{item.quantityInStock}</TableCell>
-                  <TableCell>{item.isPerishable === 'Y' ? 'Yes' : 'No'}</TableCell>
+                  <TableCell>{item.threshold}</TableCell>
                   <TableCell>
                     <Button size="small" onClick={() => handleEdit(item)}>
                       Edit
@@ -226,20 +230,18 @@ export default function InventoryPage() {
           </Table>
         </Paper>
 
-        {/* Material UI Delete Confirmation Dialog */}
-        <Dialog
-          open={confirmOpen}
-          onClose={() => setConfirmOpen(false)}
-        >
-          <DialogTitle>Delete Item</DialogTitle>
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+          <DialogTitle>Delete Inventory</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete <strong>{itemToDelete?.itemName}</strong>?
+              Are you sure you want to delete this inventory item?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button onClick={confirmDelete} color="error">Delete</Button>
+            <Button onClick={confirmDelete} color="error">
+              Delete
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>

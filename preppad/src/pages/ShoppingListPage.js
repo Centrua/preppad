@@ -56,7 +56,7 @@ export default function ShoppingListPage() {
         const token = localStorage.getItem('token');
         const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
-        const response = await fetch(`${API_BASE}/inventory/shopping-list`, {
+        const response = await fetch(`${API_BASE}/shopping-list`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -134,7 +134,7 @@ export default function ShoppingListPage() {
       const API_BASE = process.env.REACT_APP_API_BASE_URL;
       const token = localStorage.getItem('token');
 
-      const purchaseRes = await fetch(`${API_BASE}/inventory/pending-purchase`, {
+      const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -146,7 +146,7 @@ export default function ShoppingListPage() {
       const result = await purchaseRes.json();
 
       if (purchaseRes.ok) {
-        const clearRes = await fetch(`${API_BASE}/inventory/shopping-list/clear`, {
+        const clearRes = await fetch(`${API_BASE}/shopping-list/clear`, {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${token}`,

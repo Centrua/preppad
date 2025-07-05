@@ -35,7 +35,7 @@ export default function PendingPurchasesPage() {
   useEffect(() => {
     async function fetchPendingPurchases() {
       try {
-        const res = await fetch(`${API_BASE}/inventory/pending-purchases`, {
+        const res = await fetch(`${API_BASE}/pending-purchase`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
