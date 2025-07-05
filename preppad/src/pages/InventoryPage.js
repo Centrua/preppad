@@ -10,10 +10,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Paper,
   Dialog,
   DialogTitle,
@@ -26,10 +22,9 @@ const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
-  const [availableItems, setAvailableItems] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
-    itemId: '',
+    title: '',
     unit: '',
     quantityInStock: '',
     threshold: '',
@@ -52,21 +47,8 @@ export default function InventoryPage() {
     }
   };
 
-  const fetchAvailableItems = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/recipes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setAvailableItems(data);
-    } catch (err) {
-      console.error('Failed to fetch recipes:', err);
-    }
-  };
-
   useEffect(() => {
     fetchItems();
-    fetchAvailableItems();
   }, []);
 
   const handleChange = (e) => {
@@ -91,7 +73,7 @@ export default function InventoryPage() {
       });
 
       setForm({
-        itemId: '',
+        title: '',
         unit: '',
         quantityInStock: '',
         threshold: '',
@@ -106,7 +88,7 @@ export default function InventoryPage() {
   const handleEdit = (item) => {
     setEditingItem(item);
     setForm({
-      itemId: item.itemId,
+      title: item.title,
       unit: item.unit,
       quantityInStock: item.quantityInStock,
       threshold: item.threshold,
@@ -132,11 +114,6 @@ export default function InventoryPage() {
     }
   };
 
-  const getItemNameById = (itemId) => {
-    const match = availableItems.find((item) => item.id === itemId);
-    return match ? match.title : 'Unknown';
-  };
-
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
@@ -147,23 +124,20 @@ export default function InventoryPage() {
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <form onSubmit={handleSubmit}>
             <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap={2}>
-              <FormControl fullWidth required>
-                <InputLabel id="item-label">Item</InputLabel>
-                <Select
-                  labelId="item-label"
-                  name="itemId"
-                  value={form.itemId}
-                  label="Item"
-                  onChange={handleChange}
-                >
-                  {availableItems.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.title}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField name="unit" label="Unit" value={form.unit} onChange={handleChange} required />
+              <TextField
+                name="title"
+                label="Item Title"
+                value={form.title}
+                onChange={handleChange}
+                required
+              />
+              <TextField
+                name="unit"
+                label="Unit"
+                value={form.unit}
+                onChange={handleChange}
+                required
+              />
               <TextField
                 name="quantityInStock"
                 label="Quantity in Stock"
@@ -212,7 +186,7 @@ export default function InventoryPage() {
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{getItemNameById(item.itemId)}</TableCell>
+                  <TableCell>{item.title}</TableCell>
                   <TableCell>{item.unit}</TableCell>
                   <TableCell>{item.quantityInStock}</TableCell>
                   <TableCell>{item.threshold}</TableCell>
