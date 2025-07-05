@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import {
   Box,
@@ -21,12 +21,36 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function RecipePage() {
   const [form, setForm] = useState({
     title: '',
-    price: '',
+    unitCost: '',
     ingredients: [{ title: '', quantity: '', unit: '' }],
   });
-
   const [recipes, setRecipes] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [editingId, setEditingId] = useState(null); // keep track of backend id
+
+  const API_BASE = process.env.REACT_APP_API_BASE_URL; // adjust to your backend
+
+  // Fetch recipes on mount
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/inventory/recipes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Assuming data is array of recipes with id
+          setRecipes(data);
+        } else {
+          console.error('Failed to fetch recipes');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchRecipes();
+  }, [API_BASE]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,17 +75,32 @@ export default function RecipePage() {
     setForm({ ...form, ingredients: updatedIngredients });
   };
 
-  const handleSubmit = (e) => {
+  function combineIngredients(recipe) {
+    const titles = recipe.ingredients || [];
+    const quantities = recipe.ingredientsQuantity || [];
+    const units = recipe.ingredientsUnit || [];
+
+    const ingredients = titles.map((title, idx) => ({
+      title,
+      quantity: quantities[idx] || '',
+      unit: units[idx] || '',
+    }));
+
+    return { ...recipe, ingredients };
+}
+
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.title.trim() || !form.price.trim()) {
-      alert('Please fill out the recipe title and price.');
+    if (!form.title.trim() || !form.unitCost.toString().trim()) {
+      alert('Please fill out the recipe title and unit cost.');
       return;
     }
 
     const invalidIngredient = form.ingredients.some(
       (ing) =>
-        !ing.title.trim() || !ing.quantity.trim() || !ing.unit.trim()
+        !ing.title.trim() || !ing.quantity.toString().trim() || !ing.unit.trim()
     );
 
     if (invalidIngredient) {
@@ -69,48 +108,129 @@ export default function RecipePage() {
       return;
     }
 
-    if (editingIndex !== null) {
-      const updatedRecipes = [...recipes];
-      updatedRecipes[editingIndex] = form;
-      setRecipes(updatedRecipes);
-      setEditingIndex(null);
-    } else {
-      setRecipes([...recipes, form]);
-    }
+    try {
+      const token = localStorage.getItem('token');
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId
+        ? `${API_BASE}/inventory/recipes/${editingId}`
+        : `${API_BASE}/inventory/recipes`;
 
-    setForm({
-      title: '',
-      price: '',
-      ingredients: [{ title: '', quantity: '', unit: '' }],
-    });
-  };
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+        title: form.title,
+        unitCost: parseFloat(form.unitCost),
+        ingredients: form.ingredients.map(i => i.title),
+        ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
+        ingredientsUnit: form.ingredients.map(i => i.unit),
+      }),
 
-  const deleteRecipe = (index) => {
-    const updated = [...recipes];
-    updated.splice(index, 1);
-    setRecipes(updated);
 
-    if (editingIndex === index) {
-      setEditingIndex(null);
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Failed to ${editingId ? 'update' : 'add'} recipe: ${errData.error || res.statusText}`);
+        return;
+      }
+
+      const savedRecipe = await res.json();
+
+        function combineIngredients(recipe) {
+          if (!recipe.ingredients || !recipe.ingredientsQuantity || !recipe.ingredientsUnit) {
+            return [];
+          }
+          return recipe.ingredients.map((title, idx) => ({
+            title,
+            quantity: recipe.ingredientsQuantity[idx],
+            unit: recipe.ingredientsUnit[idx],
+          }));
+        }
+
+        const normalizedRecipe = {
+          ...savedRecipe,
+          ingredients: combineIngredients(savedRecipe),
+        };
+
+        if (editingId) {
+          setRecipes((prev) =>
+            prev.map((r) => (r.id === editingId ? normalizedRecipe : r))
+          );
+        } else {
+          setRecipes((prev) => [...prev, normalizedRecipe]);
+        }
+
       setForm({
         title: '',
-        price: '',
+        unitCost: '',
         ingredients: [{ title: '', quantity: '', unit: '' }],
       });
+      setEditingIndex(null);
+      setEditingId(null);
+    } catch (err) {
+      console.error(err);
+      alert('Unexpected error occurred');
+    }
+  };
+
+  const deleteRecipe = async (index) => {
+    const recipeToDelete = recipes[index];
+    if (!recipeToDelete?.id) {
+      alert('Invalid recipe');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this recipe?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/inventory/recipes/${recipeToDelete.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        alert('Failed to delete recipe');
+        return;
+      }
+
+      setRecipes((prev) => prev.filter((_, i) => i !== index));
+      if (editingIndex === index) {
+        setEditingIndex(null);
+        setEditingId(null);
+        setForm({
+          title: '',
+          unitCost: '',
+          ingredients: [{ title: '', quantity: '', unit: '' }],
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Unexpected error occurred');
     }
   };
 
   const editRecipe = (index) => {
     setEditingIndex(index);
-    setForm(recipes[index]);
+    setForm({
+    title: recipes[index].title,
+    unitCost: recipes[index].unitCost,
+    ingredients: recipes[index].ingredients || [{ title: '', quantity: '', unit: '' }],
+    });
+    setEditingId(recipes[index].id);
   };
 
   const cancelEdit = () => {
     setEditingIndex(null);
+    setEditingId(null);
     setForm({
-      title: '',
-      price: '',
-      ingredients: [{ title: '', quantity: '', unit: '' }],
+    title: '',
+    unitCost: '',
+    ingredients: [{ title: '', quantity: '', unit: '' }],
     });
   };
 
@@ -153,10 +273,10 @@ export default function RecipePage() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  name="price"
-                  label="Price"
+                  name="unitCost"
+                  label="Unit Cost"
                   type="number"
-                  value={form.price}
+                  value={form.unitCost}
                   onChange={handleChange}
                   required
                   inputProps={{ step: '0.01', min: 0 }}
@@ -266,14 +386,14 @@ export default function RecipePage() {
           <Typography color="text.secondary">No recipes added yet.</Typography>
         ) : (
           recipes.map((recipe, index) => (
-            <Paper key={index} elevation={2} sx={{ p: 3, mb: 3 }}>
+            <Paper key={recipe.id || index} elevation={2} sx={{ p: 3, mb: 3 }}>
               <Grid container justifyContent="space-between" alignItems="center">
                 <Grid item>
                   <Typography variant="h6">{recipe.title}</Typography>
                 </Grid>
               </Grid>
               <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                Price: ${parseFloat(recipe.price).toFixed(2)}
+                Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
               </Typography>
               <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
                 Ingredients:
