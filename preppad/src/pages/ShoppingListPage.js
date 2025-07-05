@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { Box, Paper, Button } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
@@ -34,7 +34,7 @@ const columns = [
     headerAlign: 'center',
     align: 'center',
     valueFormatter: (value) => {
-      return "$" + String(Number(value).toFixed(2))
+      return "$" + String(Number(value).toFixed(2));
     },
   },
   {
@@ -54,21 +54,61 @@ const columns = [
     type: 'number',
     sortable: false,
     valueGetter: (value, row) => {
-      return row.quantity*row.unitPrice;
+      return row.quantity * row.unitPrice;
     },
-        valueFormatter: (value, row) => {
-      return "$" + String(Number(value).toFixed(2))
+    valueFormatter: (value, row) => {
+      return "$" + String(Number(value).toFixed(2));
     },
   },
 ];
 
 export default function ShoppingListPage() {
-  const [rows, setRows] = useState([
-    { id: 1, item: 'Apples', quantity: 3, unitPrice: 0.5, vendor: 'Walmart' },
-    { id: 2, item: 'Milk', quantity: 2, unitPrice: 1.2, vendor: 'Target' },
-    { id: 3, item: 'Bread', quantity: 1, unitPrice: 2.0, vendor: 'Costco' },
-    { id: 4, item: 'Eggs', quantity: 12, unitPrice: 0.15, vendor: 'Kroger' },
-  ]);
+  const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    const fetchShoppingList = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+        const response = await fetch(`${API_BASE}/inventory/shopping-list`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+        console.log(data);
+
+        if (response.ok && data) {
+          const {
+            itemIds,
+            itemNames,
+            quantities,
+            cheapestUnitPrice,
+            vendor,
+          } = data;
+
+          const transformedRows = itemIds.map((itemId, index) => ({
+            id: itemId,
+            item: itemNames[index] || 'Unnamed Item',
+            quantity: quantities[index],
+            unitPrice: parseFloat(cheapestUnitPrice[index]),
+            vendor: vendor[index],
+          }));
+
+
+          setRows(transformedRows);
+        } else {
+          console.error('Failed to load shopping list:', data.error);
+        }
+      } catch (err) {
+        console.error('Error fetching shopping list:', err);
+      }
+    };
+
+    fetchShoppingList();
+  }, []);
 
   const handleProcessRowUpdate = (newRow) => {
     const quantity = Number(newRow.quantity);
@@ -98,24 +138,23 @@ export default function ShoppingListPage() {
       const quantities = rows.map((row) => row.quantity);
       const unitPrices = rows.map((row) => row.unitPrice);
       const vendors = rows.map((row) => row.vendor);
-      const totalPrice = rows.map((row) => row.quantity*row.unitPrice);
+      const totalPrice = rows.map((row) => row.quantity * row.unitPrice);
 
       const payload = {
         itemIds,
         quantities,
-        cheapestUnitPrice: unitPrices, // sending full array of unit prices
+        cheapestUnitPrice: unitPrices,
         vendor: vendors,
         totalPrice,
       };
 
       const API_BASE = process.env.REACT_APP_API_BASE_URL;
-
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${API_BASE}/inventory/pending-purchase`, {
         method: 'POST',
         headers: {
-           Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -136,28 +175,28 @@ export default function ShoppingListPage() {
   };
 
   return (
-  <Layout>
-    <Box sx={{ width: '100%', px: 2, mt: 4 }}>
-      <Paper sx={{ width: '100%', p: 2 }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          processRowUpdate={handleProcessRowUpdate}
-          experimentalFeatures={{ newEditingApi: true }}
-          disableRowSelectionOnClick
-          autoHeight
-        />
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmitPurchase}
-          >
-            Submit To Pending Purchases
-          </Button>
-        </Box>
-      </Paper>
-    </Box>
-  </Layout>
-);
+    <Layout>
+      <Box sx={{ width: '100%', px: 2, mt: 4 }}>
+        <Paper sx={{ width: '100%', p: 2 }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            processRowUpdate={handleProcessRowUpdate}
+            experimentalFeatures={{ newEditingApi: true }}
+            disableRowSelectionOnClick
+            autoHeight
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSubmitPurchase}
+            >
+              Submit To Pending Purchases
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+    </Layout>
+  );
 }
