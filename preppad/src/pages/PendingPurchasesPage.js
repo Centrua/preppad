@@ -124,7 +124,7 @@ export default function PendingPurchasesPage() {
               <TableRow>
                 <TableCell />
                 <TableCell>Purchase ID</TableCell>
-                <TableCell>Item ID</TableCell>
+                <TableCell>Item Name</TableCell>
                 <TableCell>Quantity</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
@@ -135,8 +135,8 @@ export default function PendingPurchasesPage() {
                   <TableCell />
                   <TableCell>{purchase.id}</TableCell>
                   <TableCell>
-                    {purchase.itemIds && purchase.itemIds.length > 0
-                      ? purchase.itemIds[0]
+                    {purchase.itemNames && purchase.itemNames.length > 0
+                      ? purchase.itemNames[0]
                       : ''}
                   </TableCell>
                   <TableCell>
@@ -190,7 +190,7 @@ export default function PendingPurchasesPage() {
                           align="left"
                           sx={{ minWidth: 120, fontWeight: 'bold' }}
                         >
-                          Item ID
+                          Item Name
                         </TableCell>
                         <TableCell
                           align="center"
@@ -201,10 +201,10 @@ export default function PendingPurchasesPage() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {selectedPurchase.itemIds.map((itemId, idx) => (
+                      {selectedPurchase.itemNames.map((itemName, idx) => (
                         <TableRow key={`${selectedPurchase.id}-${idx}`}>
                           <TableCell align="left" sx={{ px: 2 }}>
-                            {itemId}
+                            {itemName}
                           </TableCell>
                           <TableCell align="center" sx={{ px: 2 }}>
                             <TextField
@@ -245,7 +245,11 @@ export default function PendingPurchasesPage() {
                     value={totalPrice}
                     onChange={handleTotalPriceChange}
                     placeholder="Enter total price"
-                    inputProps={{ inputMode: 'decimal', pattern: '[0-9]*', style: { textAlign: 'center' } }}
+                    inputProps={{
+                      inputMode: 'decimal',
+                      pattern: '[0-9]*',
+                      style: { textAlign: 'center' },
+                    }}
                     sx={{ width: 140 }}
                   />
                 </Box>
