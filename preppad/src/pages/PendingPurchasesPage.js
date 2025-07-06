@@ -30,6 +30,7 @@ export default function PendingPurchasesPage() {
   const [quantities, setQuantities] = useState([]);
   const [totalPrice, setTotalPrice] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
+  const [formError, setFormError] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -66,6 +67,7 @@ export default function PendingPurchasesPage() {
     setSelectedPurchase(null);
     setQuantities([]);
     setTotalPrice('');
+    setFormError('');
   };
 
   const handleQuantityChange = (index, value) => {
@@ -84,6 +86,11 @@ export default function PendingPurchasesPage() {
 
   const handleConfirm = async () => {
     if (!selectedPurchase || !selectedPurchase.id) return;
+    setFormError('');
+    if (!totalPrice || isNaN(Number(totalPrice)) || Number(totalPrice) < 0) {
+      setFormError('Total price is required and must be a positive number.');
+      return;
+    }
     try {
       const res = await fetch(
         `${API_BASE}/pending-purchase/${selectedPurchase.id}/complete`,
@@ -98,14 +105,26 @@ export default function PendingPurchasesPage() {
       );
       if (!res.ok) {
         const errData = await res.json();
-        alert(`Failed to confirm purchase: ${errData.error || res.statusText}`);
+        setFormError(`Failed to confirm purchase: ${errData.error || res.statusText}`);
         return;
       }
+      // Call the diff-to-shopping-list endpoint with confirmed quantities
+      await fetch(
+        `${API_BASE}/pending-purchase/${selectedPurchase.id}/diff-to-shopping-list`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ confirmedQuantities: quantities }),
+        }
+      );
       // Update all purchases after confirming
       await fetchPendingPurchases();
       handleCloseDialog();
     } catch (err) {
-      alert('Unexpected error occurred');
+      setFormError('Unexpected error occurred');
       console.error(err);
     }
   };
@@ -202,6 +221,11 @@ export default function PendingPurchasesPage() {
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
           <DialogTitle>{selectedPurchase && selectedPurchase.status === 'completed' ? 'View Purchase List' : 'Confirm Purchase List'}</DialogTitle>
           <DialogContent dividers>
+            {formError && (
+              <Typography color="error" align="center" sx={{ mb: 2 }}>
+                {formError}
+              </Typography>
+            )}
             {selectedPurchase && (
               <>
                 <Typography
