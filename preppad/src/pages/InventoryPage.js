@@ -87,9 +87,10 @@ export default function InventoryPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    // Prevent duplicate item names (case-insensitive)
     const nameExists = items.some(
-      (item) => item.itemName.trim().toLowerCase() === form.itemName.trim().toLowerCase() && (!editingItem || item.id !== editingItem.id)
+      (item) =>
+        item.itemName.trim().toLowerCase() === form.itemName.trim().toLowerCase() &&
+        (!editingItem || item.id !== editingItem.id)
     );
     if (nameExists) {
       setDuplicateDialogOpen(true);
@@ -99,18 +100,21 @@ export default function InventoryPage() {
       setFormError('Quantity in Stock cannot exceed Max.');
       return;
     }
-    // If baseUnit is Whole/Package, require conversionRate
-    if (form.baseUnit === 'Whole/Package' && (!conversionRate || isNaN(Number(conversionRate)) || Number(conversionRate) <= 0)) {
+    if (
+      form.baseUnit === 'Whole/Package' &&
+      (!conversionRate || isNaN(Number(conversionRate)) || Number(conversionRate) <= 0)
+    ) {
       setFormError('Please specify how many of the allowed unit(s) are in a Whole/Package.');
       return;
     }
+
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
       : `${API_BASE}/ingredients`;
 
     try {
-      await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -126,6 +130,33 @@ export default function InventoryPage() {
         }),
       });
 
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save inventory');
+      }
+
+      // 🔁 Trigger backend shopping list logic for updated items
+      if (editingItem) {
+        try {
+          const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!updateListRes.ok) {
+            const errorData = await updateListRes.json();
+            console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+          } else {
+            console.log('✅ Shopping list updated for item:', editingItem.id);
+          }
+        } catch (err) {
+          console.error('❌ Error calling /shopping-list/:id:', err);
+        }
+      }
+
       setForm({
         itemName: '',
         allowedUnits: [],
@@ -138,6 +169,7 @@ export default function InventoryPage() {
       fetchItems();
     } catch (err) {
       console.error('Failed to save inventory:', err);
+      setFormError(err.message);
     }
   };
 
@@ -245,7 +277,6 @@ export default function InventoryPage() {
                   ))}
                 </Select>
               </FormControl>
-              {/* If baseUnit is Whole/Package, ask for conversion rate */}
               {form.baseUnit === 'Whole/Package' && (
                 <TextField
                   name="conversionRate"
@@ -300,8 +331,7 @@ export default function InventoryPage() {
                 <TableCell>Item</TableCell>
                 <TableCell>Allowed Units</TableCell>
                 <TableCell>Base Unit</TableCell>
-                {/* Show conversion rate if baseUnit is Whole/Package */}
-                <TableCell>Number of Units in Whole/Package</TableCell>
+                <TableCell>Number in Whole/Package</TableCell>
                 <TableCell>Qty In Stock</TableCell>
                 <TableCell>Max</TableCell>
                 <TableCell>Actions</TableCell>
@@ -313,7 +343,11 @@ export default function InventoryPage() {
                   <TableCell>{item.itemName}</TableCell>
                   <TableCell>{(item.allowedUnits || []).join(', ')}</TableCell>
                   <TableCell>{item.baseUnit}</TableCell>
-                  <TableCell>{item.baseUnit !== 'Whole/Package' ? 'N/A' : (item.conversionRate ? item.conversionRate : 'Not found')}</TableCell>
+                  <TableCell>
+                    {item.baseUnit !== 'Whole/Package'
+                      ? 'N/A'
+                      : item.conversionRate || 'Not found'}
+                  </TableCell>
                   <TableCell>{Math.ceil(Number(item.quantityInStock))}</TableCell>
                   <TableCell>{item.max}</TableCell>
                   <TableCell>
