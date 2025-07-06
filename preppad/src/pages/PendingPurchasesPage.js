@@ -120,6 +120,18 @@ export default function PendingPurchasesPage() {
           body: JSON.stringify({ confirmedQuantities: quantities }),
         }
       );
+      // Call the update-inventory endpoint with itemIds and their confirmed quantities
+      await fetch(
+        `${API_BASE}/pending-purchase/${selectedPurchase.id}/update-inventory`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ itemIds: selectedPurchase.itemIds, quantities }),
+        }
+      );
       // Update all purchases after confirming
       await fetchPendingPurchases();
       handleCloseDialog();
