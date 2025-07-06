@@ -27,7 +27,7 @@ export default function RecipePage() {
   const [form, setForm] = useState({
     title: '',
     unitCost: '',
-    ingredients: [{ title: '', quantity: '', unit: '' }],
+    ingredients: [{ inventoryId: '', quantity: '', unit: '' }],
   });
   const [recipes, setRecipes] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -110,7 +110,7 @@ export default function RecipePage() {
   const addIngredientRow = () => {
     setForm({
       ...form,
-      ingredients: [...form.ingredients, { title: '', quantity: '', unit: '' }],
+      ingredients: [...form.ingredients, { inventoryId: '', quantity: '', unit: '' }],
     });
   };
 
@@ -137,29 +137,23 @@ export default function RecipePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!form.title.trim() || !form.unitCost.toString().trim()) {
       alert('Please fill out the recipe title and unit cost.');
       return;
     }
-
     const invalidIngredient = form.ingredients.some(
-      (ing) =>
-        !ing.title || !ing.quantity.toString().trim()
+      (ing) => !ing.inventoryId || !ing.quantity.toString().trim() || !ing.unit
     );
-
     if (invalidIngredient) {
-      alert('Please fill out all ingredient fields: title, quantity, and unit.');
+      alert('Please fill out all ingredient fields: ingredient, quantity, and unit.');
       return;
     }
-
     try {
       const token = localStorage.getItem('token');
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId
         ? `${API_BASE}/recipes/${editingId}`
         : `${API_BASE}/recipes`;
-
       const res = await fetch(url, {
         method,
         headers: {
@@ -167,14 +161,12 @@ export default function RecipePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-        title: form.title,
-        unitCost: parseFloat(form.unitCost),
-        ingredients: form.ingredients.map(i => i.title),
-        ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
-        ingredientsUnit: form.ingredients.map(i => i.unit),
-      }),
-
-
+          title: form.title,
+          unitCost: parseFloat(form.unitCost),
+          ingredients: form.ingredients.map(i => i.inventoryId),
+          ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
+          ingredientsUnit: form.ingredients.map(i => i.unit),
+        }),
       });
 
       if (!res.ok) {
@@ -280,11 +272,15 @@ export default function RecipePage() {
     setForm({
       title: recipe.title,
       unitCost: recipe.unitCost,
-      ingredients: recipe.ingredients.map((ing, idx) => ({
-        title: ingredientsList.find(i => i.itemName === ing.title)?.id || '', // get the inventory ID
-        quantity: ing.quantity,
-        // unit: ing.unit, // if you still use unit in the form
-      })),
+      ingredients: recipe.ingredients.map((ing, idx) => {
+        // Find the inventory item by name (title) to get the id and allowed units
+        const inventoryItem = ingredientsList.find(i => i.itemName === ing.title);
+        return {
+          inventoryId: inventoryItem ? inventoryItem.id : '',
+          quantity: ing.quantity,
+          unit: ing.unit || '',
+        };
+      }),
     });
   };
 
@@ -355,61 +351,69 @@ export default function RecipePage() {
               <Typography variant="h6" gutterBottom>
                 Ingredients
               </Typography>
-              {form.ingredients.map((ingredient, index) => (
-                <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: 1 }}>
-                  <Grid item xs={4}>
-                    <FormControl fullWidth required sx={{ minWidth: 200, maxWidth: 200 }}>
-                      <InputLabel id={`ingredient-title-label-${index}`}>Ingredient</InputLabel>
-                      <Select
-                        labelId={`ingredient-title-label-${index}`}
-                        value={ingredient.title}
-                        label="Ingredient"
-                        onChange={(e) =>
-                          handleIngredientChange(index, 'title', e.target.value)
-                        }
+              {form.ingredients.map((ingredient, index) => {
+                const inventoryItem = ingredientsList.find(ing => ing.id === ingredient.inventoryId);
+                return (
+                  <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: 1 }}>
+                    <Grid item xs={4}>
+                      <FormControl fullWidth required sx={{ minWidth: 200, maxWidth: 200 }}>
+                        <InputLabel id={`ingredient-inventory-label-${index}`}>Ingredient</InputLabel>
+                        <Select
+                          labelId={`ingredient-inventory-label-${index}`}
+                          value={ingredient.inventoryId}
+                          label="Ingredient"
+                          onChange={(e) => handleIngredientChange(index, 'inventoryId', e.target.value)}
+                        >
+                          {ingredientsList.map((ing) => (
+                            <MenuItem key={ing.id} value={ing.id}>
+                              {ing.itemName}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                      <TextField
+                        fullWidth
+                        label="Quantity"
+                        type="number"
+                        value={ingredient.quantity}
+                        onChange={(e) => handleIngredientChange(index, 'quantity', e.target.value)}
+                        inputProps={{ step: 'any', min: 0 }}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={3}>
+                      <FormControl fullWidth required sx={{ minWidth: 200, maxWidth: 200 }}>
+                        <InputLabel id={`ingredient-unit-label-${index}`}>Unit</InputLabel>
+                        <Select
+                          labelId={`ingredient-unit-label-${index}`}
+                          value={ingredient.unit}
+                          label="Unit"
+                          onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
+                        >
+                          {(inventoryItem?.allowedUnits || []).map((unit) => (
+                            <MenuItem key={unit} value={unit}>
+                              {unit}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleRemoveIngredient(index)}
+                        disabled={form.ingredients.length === 1}
+                        size="small"
+                        aria-label="delete ingredient"
                       >
-                        {ingredientsList.map((ing) => (
-                          <MenuItem key={ing.id} value={ing.id}>
-                            {ing.itemName}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={3} sx={{ display: 'flex', alignItems: 'center' }}>
-                    <TextField
-                      fullWidth
-                      label="Quantity"
-                      type="number"
-                      value={ingredient.quantity}
-                      onChange={(e) =>
-                        handleIngredientChange(index, 'quantity', e.target.value)
-                      }
-                      inputProps={{ step: 'any', min: 0 }}
-                      required
-                    />
-                    {/* Display the unit next to the quantity */}
-                    <Typography sx={{ ml: 1 }}>
-                      {
-                        ingredientsList.find(ing => ing.id === ingredient.title)?.unit
-                          ? `(${ingredientsList.find(ing => ing.id === ingredient.title).unit})`
-                          : ''
-                      }
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleRemoveIngredient(index)}
-                      disabled={form.ingredients.length === 1}
-                      size="small"
-                      aria-label="delete ingredient"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Grid>
-                </Grid>
-              ))}
+                );
+              })}
               <Button
                 onClick={addIngredientRow}
                 variant="contained"
@@ -459,12 +463,8 @@ export default function RecipePage() {
                 Ingredients:
               </Typography>
               {recipe.ingredients.map((ing, i) => {
-                // Try to find the ingredient in the ingredientsList by name or id
-                const ingredientObj =
-                  ingredientsList.find(item =>
-                    item.itemName === ing.title || item.id === ing.title
-                  );
-                const unit = ing.unit || ingredientObj?.unit || '';
+                // Use the unit from the recipe's ingredientsUnit array if available
+                const unit = ing.unit || '';
                 return (
                   <Typography key={i} sx={{ ml: 2 }}>
                     • {ing.title}

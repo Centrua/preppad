@@ -30,6 +30,7 @@ const unitOptions = [
   'Dry Ounces',
   'Fluid Ounces',
   'Gallons',
+  'Whole/Package',
   'Pints',
   'Quarts',
   'Slices',
@@ -42,17 +43,18 @@ export default function InventoryPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
     itemName: '',
-    unit: '',
+    allowedUnits: [],
     baseUnit: '',
     quantityInStock: '',
-    threshold: '',
     max: '',
   });
+  const [conversionRate, setConversionRate] = useState('');
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [ingredientInUseOpen, setIngredientInUseOpen] = useState(false);
   const [formError, setFormError] = useState('');
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -73,20 +75,39 @@ export default function InventoryPage() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    if (e.target.name === 'allowedUnits') {
+      setForm({ ...form, allowedUnits: e.target.value });
+    } else if (e.target.name === 'conversionRate') {
+      setConversionRate(e.target.value);
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
+    // Prevent duplicate item names (case-insensitive)
+    const nameExists = items.some(
+      (item) => item.itemName.trim().toLowerCase() === form.itemName.trim().toLowerCase() && (!editingItem || item.id !== editingItem.id)
+    );
+    if (nameExists) {
+      setDuplicateDialogOpen(true);
+      return;
+    }
     if (Number(form.quantityInStock) > Number(form.max)) {
       setFormError('Quantity in Stock cannot exceed Max.');
+      return;
+    }
+    // If baseUnit is Whole/Package, require conversionRate
+    if (form.baseUnit === 'Whole/Package' && (!conversionRate || isNaN(Number(conversionRate)) || Number(conversionRate) <= 0)) {
+      setFormError('Please specify how many of the allowed unit(s) are in a Whole/Package.');
       return;
     }
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
-      : `${API_BASE}/ingredients`; // <-- POST to /ingredients for new items
+      : `${API_BASE}/ingredients`;
 
     try {
       await fetch(endpoint, {
@@ -97,22 +118,22 @@ export default function InventoryPage() {
         },
         body: JSON.stringify({
           itemName: form.itemName,
-          unit: form.unit,
+          allowedUnits: form.allowedUnits,
           baseUnit: form.baseUnit,
           quantityInStock: form.quantityInStock,
-          threshold: form.threshold,
           max: form.max,
+          conversionRate: form.baseUnit === 'Whole/Package' ? Number(conversionRate) : null,
         }),
       });
 
       setForm({
         itemName: '',
-        unit: '',
+        allowedUnits: [],
         baseUnit: '',
         quantityInStock: '',
-        threshold: '',
         max: '',
       });
+      setConversionRate('');
       setEditingItem(null);
       fetchItems();
     } catch (err) {
@@ -124,12 +145,12 @@ export default function InventoryPage() {
     setEditingItem(item);
     setForm({
       itemName: item.itemName,
-      unit: item.unit,
+      allowedUnits: item.allowedUnits || [],
       baseUnit: item.baseUnit,
       quantityInStock: item.quantityInStock,
-      threshold: item.threshold,
       max: item.max,
     });
+    setConversionRate(item.conversionRate || '');
   };
 
   const handleDeleteClick = (item) => {
@@ -160,10 +181,9 @@ export default function InventoryPage() {
     setEditingItem(null);
     setForm({
       itemName: '',
-      unit: '',
+      allowedUnits: [],
       baseUnit: '',
       quantityInStock: '',
-      threshold: '',
       max: '',
     });
   };
@@ -192,13 +212,15 @@ export default function InventoryPage() {
                 />
               </FormControl>
               <FormControl fullWidth required>
-                <InputLabel id="unit-label">Unit (for recipes)</InputLabel>
+                <InputLabel id="allowed-units-label">Allowed Units</InputLabel>
                 <Select
-                  labelId="unit-label"
-                  name="unit"
-                  value={form.unit}
-                  label="Unit (for recipes)"
+                  labelId="allowed-units-label"
+                  name="allowedUnits"
+                  multiple
+                  value={form.allowedUnits}
+                  label="Allowed Units"
                   onChange={handleChange}
+                  renderValue={(selected) => selected.join(', ')}
                 >
                   {unitOptions.map((unit) => (
                     <MenuItem key={unit} value={unit}>
@@ -223,6 +245,18 @@ export default function InventoryPage() {
                   ))}
                 </Select>
               </FormControl>
+              {/* If baseUnit is Whole/Package, ask for conversion rate */}
+              {form.baseUnit === 'Whole/Package' && (
+                <TextField
+                  name="conversionRate"
+                  label={`How many slices are in a Whole/Package?`}
+                  type="number"
+                  value={conversionRate}
+                  onChange={handleChange}
+                  required
+                  inputProps={{ min: 1 }}
+                />
+              )}
               <TextField
                 name="quantityInStock"
                 label="Quantity in Stock"
@@ -230,16 +264,7 @@ export default function InventoryPage() {
                 value={form.quantityInStock}
                 onChange={handleChange}
                 required
-                inputProps={{ min: 0 }}
-              />
-              <TextField
-                name="threshold"
-                label="Threshold"
-                type="number"
-                value={form.threshold}
-                onChange={handleChange}
-                required
-                inputProps={{ min: 1 }}
+                inputProps={{ min: 0, step: 'any' }}
               />
               <TextField
                 name="max"
@@ -273,10 +298,11 @@ export default function InventoryPage() {
             <TableHead>
               <TableRow>
                 <TableCell>Item</TableCell>
-                <TableCell>Unit</TableCell>
+                <TableCell>Allowed Units</TableCell>
                 <TableCell>Base Unit</TableCell>
+                {/* Show conversion rate if baseUnit is Whole/Package */}
+                <TableCell>Number of Units in Whole/Package</TableCell>
                 <TableCell>Qty In Stock</TableCell>
-                <TableCell>Threshold</TableCell>
                 <TableCell>Max</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
@@ -285,10 +311,10 @@ export default function InventoryPage() {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.itemName}</TableCell>
-                  <TableCell>{item.unit}</TableCell>
+                  <TableCell>{(item.allowedUnits || []).join(', ')}</TableCell>
                   <TableCell>{item.baseUnit}</TableCell>
-                  <TableCell>{item.quantityInStock}</TableCell>
-                  <TableCell>{item.threshold}</TableCell>
+                  <TableCell>{item.baseUnit !== 'Whole/Package' ? 'N/A' : (item.conversionRate ? item.conversionRate : 'Not found')}</TableCell>
+                  <TableCell>{Math.ceil(Number(item.quantityInStock))}</TableCell>
                   <TableCell>{item.max}</TableCell>
                   <TableCell>
                     <Button size="small" onClick={() => handleEdit(item)}>
@@ -328,6 +354,20 @@ export default function InventoryPage() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIngredientInUseOpen(false)} color="primary">
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={duplicateDialogOpen} onClose={() => setDuplicateDialogOpen(false)}>
+          <DialogTitle>Duplicate Item Name</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              An inventory item with this name already exists. Please use a unique name.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDuplicateDialogOpen(false)} color="primary">
               OK
             </Button>
           </DialogActions>
