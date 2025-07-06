@@ -14,6 +14,11 @@ import {
   Select,
   MenuItem,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -27,6 +32,9 @@ export default function RecipePage() {
   const [recipes, setRecipes] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingId, setEditingId] = useState(null); // keep track of backend id
+  const [ingredientsList, setIngredientsList] = useState([]); // <-- new state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [recipeToDelete, setRecipeToDelete] = useState(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE_URL; // adjust to your backend
 
@@ -40,7 +48,6 @@ export default function RecipePage() {
         });
         if (res.ok) {
           const data = await res.json();
-          // Assuming data is array of recipes with id
           setRecipes(data);
         } else {
           console.error('Failed to fetch recipes');
@@ -50,6 +57,44 @@ export default function RecipePage() {
       }
     };
     fetchRecipes();
+  }, [API_BASE]);
+
+  const fetchRecipes = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_BASE}/recipes`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setRecipes(data);
+    } else {
+      console.error('Failed to fetch recipes');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+  // Only use /ingredients endpoint for dropdown
+  useEffect(() => {
+    const fetchIngredients = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/ingredients`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setIngredientsList(Array.isArray(data) ? data : []);
+        } else {
+          console.error('Failed to fetch ingredients');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchIngredients();
   }, [API_BASE]);
 
   const handleChange = (e) => {
@@ -87,7 +132,7 @@ export default function RecipePage() {
     }));
 
     return { ...recipe, ingredients };
-}
+  }
 
 
   const handleSubmit = async (e) => {
@@ -100,7 +145,7 @@ export default function RecipePage() {
 
     const invalidIngredient = form.ingredients.some(
       (ing) =>
-        !ing.title.trim() || !ing.quantity.toString().trim() || !ing.unit.trim()
+        !ing.title || !ing.quantity.toString().trim()
     );
 
     if (invalidIngredient) {
@@ -164,6 +209,8 @@ export default function RecipePage() {
           setRecipes((prev) => [...prev, normalizedRecipe]);
         }
 
+      await fetchRecipes();
+
       setForm({
         title: '',
         unitCost: '',
@@ -183,8 +230,6 @@ export default function RecipePage() {
       alert('Invalid recipe');
       return;
     }
-
-    if (!window.confirm('Are you sure you want to delete this recipe?')) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -214,14 +259,33 @@ export default function RecipePage() {
     }
   };
 
+  const handleDeleteClick = (index) => {
+    setRecipeToDelete(index);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (recipeToDelete === null) return;
+    await deleteRecipe(recipeToDelete);
+    setConfirmOpen(false);
+    setRecipeToDelete(null);
+  };
+
   const editRecipe = (index) => {
+    const recipe = recipes[index];
     setEditingIndex(index);
+    setEditingId(recipe.id);
+
+    // Map the recipe's ingredients to the form structure
     setForm({
-    title: recipes[index].title,
-    unitCost: recipes[index].unitCost,
-    ingredients: recipes[index].ingredients || [{ title: '', quantity: '', unit: '' }],
+      title: recipe.title,
+      unitCost: recipe.unitCost,
+      ingredients: recipe.ingredients.map((ing, idx) => ({
+        title: ingredientsList.find(i => i.itemName === ing.title)?.id || '', // get the inventory ID
+        quantity: ing.quantity,
+        // unit: ing.unit, // if you still use unit in the form
+      })),
     });
-    setEditingId(recipes[index].id);
   };
 
   const cancelEdit = () => {
@@ -294,17 +358,25 @@ export default function RecipePage() {
               {form.ingredients.map((ingredient, index) => (
                 <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: 1 }}>
                   <Grid item xs={4}>
-                    <TextField
-                      fullWidth
-                      label="Title of Ingredient"
-                      value={ingredient.title}
-                      onChange={(e) =>
-                        handleIngredientChange(index, 'title', e.target.value)
-                      }
-                      required
-                    />
+                    <FormControl fullWidth required sx={{ minWidth: 200, maxWidth: 200 }}>
+                      <InputLabel id={`ingredient-title-label-${index}`}>Ingredient</InputLabel>
+                      <Select
+                        labelId={`ingredient-title-label-${index}`}
+                        value={ingredient.title}
+                        label="Ingredient"
+                        onChange={(e) =>
+                          handleIngredientChange(index, 'title', e.target.value)
+                        }
+                      >
+                        {ingredientsList.map((ing) => (
+                          <MenuItem key={ing.id} value={ing.id}>
+                            {ing.itemName}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={3} sx={{ display: 'flex', alignItems: 'center' }}>
                     <TextField
                       fullWidth
                       label="Quantity"
@@ -316,25 +388,14 @@ export default function RecipePage() {
                       inputProps={{ step: 'any', min: 0 }}
                       required
                     />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <FormControl required sx={{ width: 160 }}>
-                      <InputLabel id={`unit-label-${index}`}>Unit</InputLabel>
-                      <Select
-                        labelId={`unit-label-${index}`}
-                        value={ingredient.unit}
-                        label="Unit"
-                        onChange={(e) =>
-                          handleIngredientChange(index, 'unit', e.target.value)
-                        }
-                      >
-                        {unitOptions.map((unit) => (
-                          <MenuItem key={unit} value={unit}>
-                            {unit}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    {/* Display the unit next to the quantity */}
+                    <Typography sx={{ ml: 1 }}>
+                      {
+                        ingredientsList.find(ing => ing.id === ingredient.title)?.unit
+                          ? `(${ingredientsList.find(ing => ing.id === ingredient.title).unit})`
+                          : ''
+                      }
+                    </Typography>
                   </Grid>
                   <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'center' }}>
                     <IconButton
@@ -366,7 +427,6 @@ export default function RecipePage() {
               {editingIndex !== null && (
                 <Button
                   sx={{ ml: 2 }}
-                  variant="outlined"
                   color="secondary"
                   onClick={cancelEdit}
                 >
@@ -398,13 +458,22 @@ export default function RecipePage() {
               <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
                 Ingredients:
               </Typography>
-              {recipe.ingredients.map((ing, i) => (
-                <Typography key={i} sx={{ ml: 2 }}>
-                  • {ing.title}
-                  {ing.quantity && ` — ${ing.quantity}`}
-                  {ing.unit && ` ${ing.unit}`}
-                </Typography>
-              ))}
+              {recipe.ingredients.map((ing, i) => {
+                // Try to find the ingredient in the ingredientsList by name or id
+                const ingredientObj =
+                  ingredientsList.find(item =>
+                    item.itemName === ing.title || item.id === ing.title
+                  );
+                const unit = ing.unit || ingredientObj?.unit || '';
+                return (
+                  <Typography key={i} sx={{ ml: 2 }}>
+                    • {ing.title}
+                    {ing.quantity && (
+                      <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                    )}
+                  </Typography>
+                );
+              })}
               <Divider sx={{ mt: 2, mb: 1 }} />
               <Box display="flex" gap={1}>
                 <Button
@@ -420,7 +489,7 @@ export default function RecipePage() {
                   variant="outlined"
                   color="error"
                   startIcon={<DeleteIcon />}
-                  onClick={() => deleteRecipe(index)}
+                  onClick={() => handleDeleteClick(index)}
                 >
                   Delete
                 </Button>
@@ -428,6 +497,22 @@ export default function RecipePage() {
             </Paper>
           ))
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+          <DialogTitle>Delete Recipe</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this recipe?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button onClick={confirmDelete} color="error">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Layout>
   );

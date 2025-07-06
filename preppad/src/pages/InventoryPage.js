@@ -10,39 +10,55 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Paper,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
 } from '@mui/material';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
+const unitOptions = [
+  'Count',
+  'Cups',
+  'Dry Ounces',
+  'Fluid Ounces',
+  'Gallons',
+  'Pints',
+  'Quarts',
+  'Slices',
+  'Tablespoons',
+  'Teaspoons',
+].sort();
+
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
-  const [availableItems, setAvailableItems] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
-    itemId: '',
+    itemName: '',
     unit: '',
+    baseUnit: '',
     quantityInStock: '',
     threshold: '',
+    max: '',
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [ingredientInUseOpen, setIngredientInUseOpen] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const token = localStorage.getItem('token');
 
   const fetchItems = async () => {
     try {
-      const res = await fetch(`${API_BASE}/inventory`, {
+      const res = await fetch(`${API_BASE}/ingredients`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -52,21 +68,8 @@ export default function InventoryPage() {
     }
   };
 
-  const fetchAvailableItems = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/recipes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setAvailableItems(data);
-    } catch (err) {
-      console.error('Failed to fetch recipes:', err);
-    }
-  };
-
   useEffect(() => {
     fetchItems();
-    fetchAvailableItems();
   }, []);
 
   const handleChange = (e) => {
@@ -75,10 +78,15 @@ export default function InventoryPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
+    if (Number(form.quantityInStock) > Number(form.max)) {
+      setFormError('Quantity in Stock cannot exceed Max.');
+      return;
+    }
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
-      ? `${API_BASE}/inventory/${editingItem.id}`
-      : `${API_BASE}/inventory`;
+      ? `${API_BASE}/ingredients/${editingItem.id}`
+      : `${API_BASE}/ingredients`; // <-- POST to /ingredients for new items
 
     try {
       await fetch(endpoint, {
@@ -87,14 +95,23 @@ export default function InventoryPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          itemName: form.itemName,
+          unit: form.unit,
+          baseUnit: form.baseUnit,
+          quantityInStock: form.quantityInStock,
+          threshold: form.threshold,
+          max: form.max,
+        }),
       });
 
       setForm({
-        itemId: '',
+        itemName: '',
         unit: '',
+        baseUnit: '',
         quantityInStock: '',
         threshold: '',
+        max: '',
       });
       setEditingItem(null);
       fetchItems();
@@ -106,10 +123,12 @@ export default function InventoryPage() {
   const handleEdit = (item) => {
     setEditingItem(item);
     setForm({
-      itemId: item.itemId,
+      itemName: item.itemName,
       unit: item.unit,
+      baseUnit: item.baseUnit,
       quantityInStock: item.quantityInStock,
       threshold: item.threshold,
+      max: item.max,
     });
   };
 
@@ -120,10 +139,15 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     try {
-      await fetch(`${API_BASE}/inventory/${itemToDelete.id}`, {
+      const res = await fetch(`${API_BASE}/ingredients/${itemToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 400 || res.status === 409) {
+        setConfirmOpen(false);
+        setIngredientInUseOpen(true);
+        return;
+      }
       setConfirmOpen(false);
       setItemToDelete(null);
       fetchItems();
@@ -132,9 +156,16 @@ export default function InventoryPage() {
     }
   };
 
-  const getItemNameById = (itemId) => {
-    const match = availableItems.find((item) => item.id === itemId);
-    return match ? match.title : 'Unknown';
+  const handleCancel = () => {
+    setEditingItem(null);
+    setForm({
+      itemName: '',
+      unit: '',
+      baseUnit: '',
+      quantityInStock: '',
+      threshold: '',
+      max: '',
+    });
   };
 
   return (
@@ -143,27 +174,55 @@ export default function InventoryPage() {
         <Typography variant="h5" gutterBottom>
           {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
         </Typography>
-
+        {formError && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {formError}
+          </Typography>
+        )}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <form onSubmit={handleSubmit}>
             <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap={2}>
               <FormControl fullWidth required>
-                <InputLabel id="item-label">Item</InputLabel>
+                <TextField
+                  name="itemName"
+                  label="Item Name"
+                  value={form.itemName}
+                  onChange={handleChange}
+                  required
+                />
+              </FormControl>
+              <FormControl fullWidth required>
+                <InputLabel id="unit-label">Unit (for recipes)</InputLabel>
                 <Select
-                  labelId="item-label"
-                  name="itemId"
-                  value={form.itemId}
-                  label="Item"
+                  labelId="unit-label"
+                  name="unit"
+                  value={form.unit}
+                  label="Unit (for recipes)"
                   onChange={handleChange}
                 >
-                  {availableItems.map((item) => (
-                    <MenuItem key={item.id} value={item.id}>
-                      {item.title}
+                  {unitOptions.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              <TextField name="unit" label="Unit" value={form.unit} onChange={handleChange} required />
+              <FormControl fullWidth required>
+                <InputLabel id="base-unit-label">Base Unit (for storage)</InputLabel>
+                <Select
+                  labelId="base-unit-label"
+                  name="baseUnit"
+                  value={form.baseUnit}
+                  label="Base Unit (for storage)"
+                  onChange={handleChange}
+                >
+                  {unitOptions.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <TextField
                 name="quantityInStock"
                 label="Quantity in Stock"
@@ -171,6 +230,7 @@ export default function InventoryPage() {
                 value={form.quantityInStock}
                 onChange={handleChange}
                 required
+                inputProps={{ min: 0 }}
               />
               <TextField
                 name="threshold"
@@ -179,15 +239,25 @@ export default function InventoryPage() {
                 value={form.threshold}
                 onChange={handleChange}
                 required
+                inputProps={{ min: 1 }}
+              />
+              <TextField
+                name="max"
+                label="Max"
+                type="number"
+                value={form.max}
+                onChange={handleChange}
+                required
+                inputProps={{ min: 1 }}
               />
             </Box>
 
             <Box mt={3}>
               <Button variant="contained" color="primary" type="submit">
-                {editingItem ? 'Update Inventory' : 'Add Inventory'}
+                {editingItem ? 'Update Inventory' : 'Submit Inventory'}
               </Button>
               {editingItem && (
-                <Button sx={{ ml: 2 }} onClick={() => setEditingItem(null)} color="secondary">
+                <Button sx={{ ml: 2 }} onClick={handleCancel} color="secondary">
                   Cancel
                 </Button>
               )}
@@ -204,18 +274,22 @@ export default function InventoryPage() {
               <TableRow>
                 <TableCell>Item</TableCell>
                 <TableCell>Unit</TableCell>
+                <TableCell>Base Unit</TableCell>
                 <TableCell>Qty In Stock</TableCell>
                 <TableCell>Threshold</TableCell>
+                <TableCell>Max</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{getItemNameById(item.itemId)}</TableCell>
+                  <TableCell>{item.itemName}</TableCell>
                   <TableCell>{item.unit}</TableCell>
+                  <TableCell>{item.baseUnit}</TableCell>
                   <TableCell>{item.quantityInStock}</TableCell>
                   <TableCell>{item.threshold}</TableCell>
+                  <TableCell>{item.max}</TableCell>
                   <TableCell>
                     <Button size="small" onClick={() => handleEdit(item)}>
                       Edit
@@ -241,6 +315,20 @@ export default function InventoryPage() {
             <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
             <Button onClick={confirmDelete} color="error">
               Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={ingredientInUseOpen} onClose={() => setIngredientInUseOpen(false)}>
+          <DialogTitle>Cannot Delete Ingredient</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              This ingredient is used in one or more recipes. Please remove it from all recipes before deleting.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIngredientInUseOpen(false)} color="primary">
+              OK
             </Button>
           </DialogActions>
         </Dialog>

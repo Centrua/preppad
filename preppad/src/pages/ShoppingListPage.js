@@ -17,7 +17,7 @@ const columns = [
     field: 'item',
     headerName: 'Item',
     flex: 1,
-    editable: true,
+    editable: false, // Item name should not be editable
     headerAlign: 'center',
     align: 'center',
   },
@@ -66,33 +66,13 @@ export default function ShoppingListPage() {
         if (response.ok && data) {
           const { itemIds, itemNames, quantities } = data;
 
-          setRows((prevRows) => {
-            const rowMap = new Map();
-            prevRows.forEach((row) => {
-              rowMap.set(row.id, { ...row });
-            });
-
-            itemIds.forEach((itemId, index) => {
-              const quantity = quantities[index];
-
-              if (rowMap.has(itemId)) {
-                const existing = rowMap.get(itemId);
-                const newQuantity = existing.quantity + quantity;
-                rowMap.set(itemId, {
-                  ...existing,
-                  quantity: newQuantity,
-                });
-              } else {
-                rowMap.set(itemId, {
-                  id: itemId,
-                  item: itemNames[index] || 'Unnamed Item',
-                  quantity,
-                });
-              }
-            });
-
-            return Array.from(rowMap.values());
-          });
+          // Build rows from itemIds, itemNames, and quantities
+          const newRows = (itemIds || []).map((itemId, index) => ({
+            id: itemId,
+            item: (itemNames && itemNames[index]) || 'Unnamed Item',
+            quantity: (quantities && quantities[index]) || 0,
+          }));
+          setRows(newRows);
         } else {
           console.error('Failed to load shopping list:', data.error);
         }
@@ -106,12 +86,10 @@ export default function ShoppingListPage() {
 
   const handleProcessRowUpdate = (newRow) => {
     const quantity = Number(newRow.quantity);
-
     const cleanRow = {
       ...newRow,
       quantity: isNaN(quantity) ? 0 : quantity,
     };
-
     setRows((prev) => prev.map((row) => (row.id === cleanRow.id ? cleanRow : row)));
     return cleanRow;
   };
