@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Layout from '../components/Layout';
 import {
   Box,
@@ -18,6 +18,8 @@ import {
   TextField,
   TableContainer,
 } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import PrintIcon from '@mui/icons-material/Print';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
@@ -31,6 +33,9 @@ export default function PendingPurchasesPage() {
   const [totalPrice, setTotalPrice] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [formError, setFormError] = useState('');
+  const printRef = useRef();
+  const [printText, setPrintText] = useState('');
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -141,6 +146,39 @@ export default function PendingPurchasesPage() {
     }
   };
 
+  // Helper to get printable/copyable text for a purchase
+  const getPurchaseText = (purchase) => {
+    const lines = purchase.itemNames.map((name, idx) =>
+      `${name}: ${purchase.quantities[idx]}`
+    );
+    return `Purchase ID: ${purchase.id}\n` + lines.join('\n');
+  };
+
+  const handleCopy = (purchase) => {
+    const text = getPurchaseText(purchase);
+    navigator.clipboard.writeText(text);
+  };
+
+  const handlePrint = (purchase) => {
+    setPrintText(getPurchaseText(purchase));
+    setShowPrintDialog(true);
+  };
+  const handlePrintDialog = () => {
+    if (printRef.current) {
+      const printContents = printRef.current.innerText;
+      const printWindow = window.open('', '', 'height=600,width=400');
+      printWindow.document.write('<pre>' + printContents + '</pre>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.onafterprint = () => printWindow.close();
+    }
+    setShowPrintDialog(false);
+  };
+  const handleClosePrintDialog = () => {
+    setShowPrintDialog(false);
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -221,6 +259,22 @@ export default function PendingPurchasesPage() {
                         onClick={() => handleOpenDialog(purchase)}
                       >
                         {purchase.status === 'completed' ? 'View' : 'Confirm'}
+                      </Button>
+                      <Button
+                        size="small"
+                        sx={{ ml: 1 }}
+                        onClick={() => handleCopy(purchase)}
+                        title="Copy text"
+                      >
+                        <ContentCopyIcon fontSize="small" />
+                      </Button>
+                      <Button
+                        size="small"
+                        sx={{ ml: 1 }}
+                        onClick={() => handlePrint(purchase)}
+                        title="Print"
+                      >
+                        <PrintIcon fontSize="small" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -348,6 +402,18 @@ export default function PendingPurchasesPage() {
                 Confirm List
               </Button>
             )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Print Dialog */}
+        <Dialog open={showPrintDialog} onClose={handleClosePrintDialog} maxWidth="xs" fullWidth>
+          <DialogTitle>Print Purchase</DialogTitle>
+          <DialogContent dividers>
+            <pre ref={printRef} style={{ fontFamily: 'inherit', fontSize: 16 }}>{printText}</pre>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClosePrintDialog} color="inherit">Cancel</Button>
+            <Button onClick={handlePrintDialog} variant="contained" color="primary">Print</Button>
           </DialogActions>
         </Dialog>
       </Box>
