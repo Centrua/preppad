@@ -22,40 +22,42 @@ import {
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
 export default function PendingPurchasesPage() {
-  const [pendingPurchases, setPendingPurchases] = useState([]);
+  const [allPurchases, setAllPurchases] = useState([]); // Store all purchases
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [quantities, setQuantities] = useState([]);
   const [totalPrice, setTotalPrice] = useState('');
+  const [statusFilter, setStatusFilter] = useState('pending');
 
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    async function fetchPendingPurchases() {
-      try {
-        const res = await fetch(`${API_BASE}/pending-purchase`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-        const data = await res.json();
-        setPendingPurchases(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+  // Fetch all purchases, don't filter here
+  const fetchPendingPurchases = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/pending-purchase`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      setAllPurchases(data); // Store all purchases
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchPendingPurchases();
-  }, [token]);
+  }, [token]); // Only run on mount or token change
 
   const handleOpenDialog = (purchase) => {
     setSelectedPurchase(purchase);
     setQuantities([...purchase.quantities]);
-    setTotalPrice('');
+    // If completed, show the saved totalPrice; otherwise, clear for input
+    setTotalPrice(purchase.status === 'completed' && purchase.totalPrice != null ? String(purchase.totalPrice) : '');
     setOpenDialog(true);
   };
 
@@ -80,14 +82,32 @@ export default function PendingPurchasesPage() {
     }
   };
 
-  const handleConfirm = () => {
-    console.log('Confirmed purchase:', {
-      purchaseId: selectedPurchase.id,
-      quantities,
-      totalPrice,
-    });
-    // Implement backend update logic here if needed
-    handleCloseDialog();
+  const handleConfirm = async () => {
+    if (!selectedPurchase || !selectedPurchase.id) return;
+    try {
+      const res = await fetch(
+        `${API_BASE}/pending-purchase/${selectedPurchase.id}/complete`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ totalPrice: Number(totalPrice) }),
+        }
+      );
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Failed to confirm purchase: ${errData.error || res.statusText}`);
+        return;
+      }
+      // Update all purchases after confirming
+      await fetchPendingPurchases();
+      handleCloseDialog();
+    } catch (err) {
+      alert('Unexpected error occurred');
+      console.error(err);
+    }
   };
 
   if (loading) {
@@ -118,6 +138,23 @@ export default function PendingPurchasesPage() {
         <Typography variant="h5" gutterBottom>
           Pending Purchases
         </Typography>
+        <Box mb={2} display="flex" alignItems="center" gap={2}>
+          <Typography>Status:</Typography>
+          <Button
+            variant={statusFilter === 'pending' ? 'contained' : 'outlined'}
+            onClick={() => setStatusFilter('pending')}
+            size="small"
+          >
+            Pending
+          </Button>
+          <Button
+            variant={statusFilter === 'completed' ? 'contained' : 'outlined'}
+            onClick={() => setStatusFilter('completed')}
+            size="small"
+          >
+            Completed
+          </Button>
+        </Box>
         <Paper>
           <Table aria-label="pending purchases table">
             <TableHead>
@@ -130,38 +167,40 @@ export default function PendingPurchasesPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {pendingPurchases.map((purchase) => (
-                <TableRow key={purchase.id} hover>
-                  <TableCell />
-                  <TableCell>{purchase.id}</TableCell>
-                  <TableCell>
-                    {purchase.itemNames && purchase.itemNames.length > 0
-                      ? purchase.itemNames[0]
-                      : ''}
-                  </TableCell>
-                  <TableCell>
-                    {purchase.quantities && purchase.quantities.length > 0
-                      ? purchase.quantities[0]
-                      : ''}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleOpenDialog(purchase)}
-                    >
-                      Confirm
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {allPurchases
+                .filter((purchase) => purchase.status === statusFilter)
+                .map((purchase) => (
+                  <TableRow key={purchase.id} hover>
+                    <TableCell />
+                    <TableCell>{purchase.id}</TableCell>
+                    <TableCell>
+                      {purchase.itemNames && purchase.itemNames.length > 0
+                        ? purchase.itemNames[0]
+                        : ''}
+                    </TableCell>
+                    <TableCell>
+                      {purchase.quantities && purchase.quantities.length > 0
+                        ? purchase.quantities[0]
+                        : ''}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="contained"
+                        color={purchase.status === 'completed' ? 'info' : 'primary'}
+                        onClick={() => handleOpenDialog(purchase)}
+                      >
+                        {purchase.status === 'completed' ? 'View' : 'Confirm'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </Paper>
 
         {/* Dialog */}
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-          <DialogTitle>Confirm Purchase List</DialogTitle>
+          <DialogTitle>{selectedPurchase && selectedPurchase.status === 'completed' ? 'View Purchase List' : 'Confirm Purchase List'}</DialogTitle>
           <DialogContent dividers>
             {selectedPurchase && (
               <>
@@ -214,8 +253,9 @@ export default function PendingPurchasesPage() {
                               onChange={(e) =>
                                 handleQuantityChange(idx, e.target.value)
                               }
-                              inputProps={{ min: 0, style: { textAlign: 'center' } }}
+                              inputProps={{ min: 0, style: { textAlign: 'center' }, readOnly: selectedPurchase.status === 'completed' }}
                               sx={{ width: 80, mx: 'auto', display: 'block' }}
+                              disabled={selectedPurchase.status === 'completed'}
                             />
                           </TableCell>
                         </TableRow>
@@ -240,17 +280,19 @@ export default function PendingPurchasesPage() {
                     Total Price ($):
                   </Typography>
                   <TextField
-                    type="text"
+                    type="number"
                     size="small"
                     value={totalPrice}
                     onChange={handleTotalPriceChange}
                     placeholder="Enter total price"
                     inputProps={{
-                      inputMode: 'decimal',
-                      pattern: '[0-9]*',
+                      min: 0,
+                      step: '0.01',
                       style: { textAlign: 'center' },
+                      readOnly: selectedPurchase.status === 'completed',
                     }}
                     sx={{ width: 140 }}
+                    disabled={selectedPurchase.status === 'completed'}
                   />
                 </Box>
               </>
@@ -258,16 +300,18 @@ export default function PendingPurchasesPage() {
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
             <Button onClick={handleCloseDialog} color="inherit">
-              Cancel
+              Close
             </Button>
-            <Button
-              onClick={handleConfirm}
-              variant="contained"
-              color="success"
-              sx={{ fontWeight: 'bold', minWidth: 140 }}
-            >
-              Confirm List
-            </Button>
+            {selectedPurchase && selectedPurchase.status !== 'completed' && (
+              <Button
+                onClick={handleConfirm}
+                variant="contained"
+                color="success"
+                sx={{ fontWeight: 'bold', minWidth: 140 }}
+              >
+                Confirm List
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       </Box>
