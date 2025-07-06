@@ -28,6 +28,7 @@ export default function RecipePage() {
     title: '',
     unitCost: '',
     ingredients: [{ inventoryId: '', quantity: '', unit: '' }],
+    categories: [],
   });
   const [recipes, setRecipes] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -166,6 +167,7 @@ export default function RecipePage() {
           ingredients: form.ingredients.map(i => i.inventoryId),
           ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
           ingredientsUnit: form.ingredients.map(i => i.unit),
+          categories: form.categories,
         }),
       });
 
@@ -207,6 +209,7 @@ export default function RecipePage() {
         title: '',
         unitCost: '',
         ingredients: [{ title: '', quantity: '', unit: '' }],
+        categories: [],
       });
       setEditingIndex(null);
       setEditingId(null);
@@ -243,6 +246,7 @@ export default function RecipePage() {
           title: '',
           unitCost: '',
           ingredients: [{ title: '', quantity: '', unit: '' }],
+          categories: [],
         });
       }
     } catch (err) {
@@ -267,13 +271,10 @@ export default function RecipePage() {
     const recipe = recipes[index];
     setEditingIndex(index);
     setEditingId(recipe.id);
-
-    // Map the recipe's ingredients to the form structure
     setForm({
       title: recipe.title,
       unitCost: recipe.unitCost,
       ingredients: recipe.ingredients.map((ing, idx) => {
-        // Find the inventory item by name (title) to get the id and allowed units
         const inventoryItem = ingredientsList.find(i => i.itemName === ing.title);
         return {
           inventoryId: inventoryItem ? inventoryItem.id : '',
@@ -281,6 +282,7 @@ export default function RecipePage() {
           unit: ing.unit || '',
         };
       }),
+      categories: recipe.categories || [],
     });
   };
 
@@ -291,7 +293,24 @@ export default function RecipePage() {
     title: '',
     unitCost: '',
     ingredients: [{ title: '', quantity: '', unit: '' }],
+    categories: [],
     });
+  };
+
+  const categoryOptions = [
+    'Breakfast',
+    'Lunch',
+    'Dinner',
+    'Snack',
+    'Dessert',
+    'Beverage',
+    'Appetizer',
+    'Side',
+    'Other',
+  ];
+
+  const handleCategoryChange = (event) => {
+    setForm({ ...form, categories: event.target.value });
   };
 
   const unitOptions = [
@@ -344,6 +363,25 @@ export default function RecipePage() {
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                 />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth sx={{ minWidth: 200, maxWidth: 200 }}>
+                  <InputLabel id="categories-label">Categories</InputLabel>
+                  <Select
+                    labelId="categories-label"
+                    multiple
+                    value={form.categories}
+                    onChange={handleCategoryChange}
+                    label="Categories"
+                    renderValue={(selected) => selected.join(', ')}
+                  >
+                    {categoryOptions.map((cat) => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
 
@@ -445,57 +483,116 @@ export default function RecipePage() {
         <Typography variant="h6" gutterBottom>
           Recipes
         </Typography>
-
-        {recipes.length === 0 ? (
-          <Typography color="text.secondary">No recipes added yet.</Typography>
-        ) : (
-          recipes.map((recipe, index) => (
-            <Paper key={recipe.id || index} elevation={2} sx={{ p: 3, mb: 3 }}>
-              <Grid container justifyContent="space-between" alignItems="center">
-                <Grid item>
-                  <Typography variant="h6">{recipe.title}</Typography>
-                </Grid>
-              </Grid>
-              <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
+        {categoryOptions.map((cat) => {
+          const catRecipes = recipes.filter(r => (r.categories || []).includes(cat));
+          if (catRecipes.length === 0) return null;
+          return (
+            <Box key={cat} sx={{ mb: 4 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
+                {cat}
               </Typography>
-              <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
-                Ingredients:
-              </Typography>
-              {recipe.ingredients.map((ing, i) => {
-                // Use the unit from the recipe's ingredientsUnit array if available
-                const unit = ing.unit || '';
-                return (
-                  <Typography key={i} sx={{ ml: 2 }}>
-                    • {ing.title}
-                    {ing.quantity && (
-                      <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
-                    )}
+              {catRecipes.map((recipe, index) => (
+                <Paper key={recipe.id || index} elevation={2} sx={{ p: 3, mb: 3 }}>
+                  <Grid container justifyContent="space-between" alignItems="center">
+                    <Grid item>
+                      <Typography variant="h6">{recipe.title}</Typography>
+                    </Grid>
+                  </Grid>
+                  <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                    Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
                   </Typography>
-                );
-              })}
-              <Divider sx={{ mt: 2, mb: 1 }} />
-              <Box display="flex" gap={1}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => editRecipe(index)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => handleDeleteClick(index)}
-                >
-                  Delete
-                </Button>
-              </Box>
-            </Paper>
-          ))
+                  <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
+                    Ingredients:
+                  </Typography>
+                  {recipe.ingredients.map((ing, i) => {
+                    const unit = ing.unit || '';
+                    return (
+                      <Typography key={i} sx={{ ml: 2 }}>
+                        • {ing.title}
+                        {ing.quantity && (
+                          <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                        )}
+                      </Typography>
+                    );
+                  })}
+                  <Divider sx={{ mt: 2, mb: 1 }} />
+                  <Box display="flex" gap={1}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => editRecipe(recipes.findIndex(r => r.id === recipe.id))}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteClick(recipes.findIndex(r => r.id === recipe.id))}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+          );
+        })}
+        {/* Show recipes with no category */}
+        {recipes.filter(r => !r.categories || r.categories.length === 0).length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
+              Uncategorized
+            </Typography>
+            {recipes.filter(r => !r.categories || r.categories.length === 0).map((recipe, index) => (
+              <Paper key={recipe.id || index} elevation={2} sx={{ p: 3, mb: 3 }}>
+                <Grid container justifyContent="space-between" alignItems="center">
+                  <Grid item>
+                    <Typography variant="h6">{recipe.title}</Typography>
+                  </Grid>
+                </Grid>
+                <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                  Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
+                  Ingredients:
+                </Typography>
+                {recipe.ingredients.map((ing, i) => {
+                  const unit = ing.unit || '';
+                  return (
+                    <Typography key={i} sx={{ ml: 2 }}>
+                      • {ing.title}
+                      {ing.quantity && (
+                        <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                      )}
+                    </Typography>
+                  );
+                })}
+                <Divider sx={{ mt: 2, mb: 1 }} />
+                <Box display="flex" gap={1}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    onClick={() => editRecipe(recipes.findIndex(r => r.id === recipe.id))}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => handleDeleteClick(recipes.findIndex(r => r.id === recipe.id))}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
         )}
 
         {/* Delete Confirmation Dialog */}
