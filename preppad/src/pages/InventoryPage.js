@@ -87,7 +87,7 @@ export default function InventoryPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    const nameExists = items.some(
+    const nameExists = Array.isArray(items) && items.some(
       (item) =>
         item.itemName.trim().toLowerCase() === form.itemName.trim().toLowerCase() &&
         (!editingItem || item.id !== editingItem.id)
@@ -112,6 +112,8 @@ export default function InventoryPage() {
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
       : `${API_BASE}/ingredients`;
+
+    console.log("token:", token);
 
     try {
       const res = await fetch(endpoint, {
@@ -337,8 +339,8 @@ export default function InventoryPage() {
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
-              {items.map((item) => (
+            <TableBody> 
+              {Array.isArray(items) && items.map(item => (
                 <TableRow key={item.id}>
                   <TableCell>{item.itemName}</TableCell>
                   <TableCell>{(item.allowedUnits || []).join(', ')}</TableCell>
