@@ -107,7 +107,7 @@ export default function InventoryPage() {
       setFormError('Please specify how many of the allowed unit(s) are in a Whole/Package.');
       return;
     }
-
+//
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
