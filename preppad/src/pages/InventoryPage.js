@@ -10,48 +10,63 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Paper,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
 } from '@mui/material';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+const unitOptions = [
+  'Count',
+  'Cups',
+  'Dry Ounces',
+  'Fluid Ounces',
+  'Gallons',
+  'Whole/Package',
+  'Pints',
+  'Quarts',
+  'Slices',
+  'Tablespoons',
+  'Teaspoons',
+].sort();
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
     itemName: '',
-    unitCost: '',
-    vendor: '',
-    upc: '',
-    expirationDate: '',
-    unit: '',
+    allowedUnits: [],
+    baseUnit: '',
     quantityInStock: '',
-    isPerishable: 'N',
+    max: '',
   });
+  const [conversionRate, setConversionRate] = useState('');
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [ingredientInUseOpen, setIngredientInUseOpen] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
 
   const token = localStorage.getItem('token');
 
   const fetchItems = async () => {
     try {
-      const res = await fetch(`${API_BASE}/inventory/items`, {
+      const res = await fetch(`${API_BASE}/ingredients`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setItems(data);
     } catch (err) {
-      console.error('Failed to fetch items:', err);
+      console.error('Failed to fetch inventory items:', err);
     }
   };
 
@@ -60,40 +75,103 @@ export default function InventoryPage() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    if (e.target.name === 'allowedUnits') {
+      setForm({ ...form, allowedUnits: e.target.value });
+    } else if (e.target.name === 'conversionRate') {
+      setConversionRate(e.target.value);
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
+    const nameExists = Array.isArray(items) && items.some(
+      (item) =>
+        item.itemName.trim().toLowerCase() === form.itemName.trim().toLowerCase() &&
+        (!editingItem || item.id !== editingItem.id)
+    );
+    if (nameExists) {
+      setDuplicateDialogOpen(true);
+      return;
+    }
+    if (Number(form.quantityInStock) > Number(form.max)) {
+      setFormError('Quantity in Stock cannot exceed Max.');
+      return;
+    }
+    if (
+      form.baseUnit === 'Whole/Package' &&
+      (!conversionRate || isNaN(Number(conversionRate)) || Number(conversionRate) <= 0)
+    ) {
+      setFormError('Please specify how many of the allowed unit(s) are in a Whole/Package.');
+      return;
+    }
+
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
-      ? `${API_BASE}/inventory/items/${editingItem.itemId}`
-      : `${API_BASE}/inventory/items`;
+      ? `${API_BASE}/ingredients/${editingItem.id}`
+      : `${API_BASE}/ingredients`;
+
+    console.log("token:", token);
 
     try {
-      await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          itemName: form.itemName,
+          allowedUnits: form.allowedUnits,
+          baseUnit: form.baseUnit,
+          quantityInStock: form.quantityInStock,
+          max: form.max,
+          conversionRate: form.baseUnit === 'Whole/Package' ? Number(conversionRate) : null,
+        }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save inventory');
+      }
+
+      // 🔁 Trigger backend shopping list logic for updated items
+      if (editingItem) {
+        try {
+          const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!updateListRes.ok) {
+            const errorData = await updateListRes.json();
+            console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+          } else {
+            console.log('✅ Shopping list updated for item:', editingItem.id);
+          }
+        } catch (err) {
+          console.error('❌ Error calling /shopping-list/:id:', err);
+        }
+      }
 
       setForm({
         itemName: '',
-        unitCost: '',
-        vendor: '',
-        upc: '',
-        expirationDate: '',
-        unit: '',
+        allowedUnits: [],
+        baseUnit: '',
         quantityInStock: '',
-        isPerishable: 'N',
+        max: '',
       });
+      setConversionRate('');
       setEditingItem(null);
       fetchItems();
     } catch (err) {
-      console.error('Failed to save item:', err);
+      console.error('Failed to save inventory:', err);
+      setFormError(err.message);
     }
   };
 
@@ -101,14 +179,12 @@ export default function InventoryPage() {
     setEditingItem(item);
     setForm({
       itemName: item.itemName,
-      unitCost: item.unitCost,
-      vendor: item.vendor,
-      upc: item.upc || '',
-      expirationDate: item.expirationDate?.slice(0, 10) || '',
-      unit: item.unit,
+      allowedUnits: item.allowedUnits || [],
+      baseUnit: item.baseUnit,
       quantityInStock: item.quantityInStock,
-      isPerishable: item.isPerishable,
+      max: item.max,
     });
+    setConversionRate(item.conversionRate || '');
   };
 
   const handleDeleteClick = (item) => {
@@ -118,68 +194,128 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     try {
-      await fetch(`${API_BASE}/inventory/items/${itemToDelete.itemId}`, {
+      const res = await fetch(`${API_BASE}/ingredients/${itemToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 400 || res.status === 409) {
+        setConfirmOpen(false);
+        setIngredientInUseOpen(true);
+        return;
+      }
       setConfirmOpen(false);
       setItemToDelete(null);
       fetchItems();
     } catch (err) {
-      console.error('Failed to delete item:', err);
+      console.error('Failed to delete inventory:', err);
     }
+  };
+
+  const handleCancel = () => {
+    setEditingItem(null);
+    setForm({
+      itemName: '',
+      allowedUnits: [],
+      baseUnit: '',
+      quantityInStock: '',
+      max: '',
+    });
   };
 
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
-          {editingItem ? 'Edit Item' : 'Add Item'}
+          {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
         </Typography>
-
+        {formError && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {formError}
+          </Typography>
+        )}
         <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
           <form onSubmit={handleSubmit}>
             <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap={2}>
-              <TextField name="itemName" label="Item Name" value={form.itemName} onChange={handleChange} required />
-              <TextField name="unitCost" label="Unit Cost" value={form.unitCost} onChange={handleChange} required />
-              <TextField name="vendor" label="Vendor" value={form.vendor} onChange={handleChange} required />
-              <TextField name="upc" label="UPC" value={form.upc} onChange={handleChange} />
-              <TextField
-                name="expirationDate"
-                label="Expiration Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={form.expirationDate}
-                onChange={handleChange}
-              />
-              <TextField name="unit" label="Unit" value={form.unit} onChange={handleChange} required />
+              <FormControl fullWidth required>
+                <TextField
+                  name="itemName"
+                  label="Item Name"
+                  value={form.itemName}
+                  onChange={handleChange}
+                  required
+                />
+              </FormControl>
+              <FormControl fullWidth required>
+                <InputLabel id="allowed-units-label">Allowed Units</InputLabel>
+                <Select
+                  labelId="allowed-units-label"
+                  name="allowedUnits"
+                  multiple
+                  value={form.allowedUnits}
+                  label="Allowed Units"
+                  onChange={handleChange}
+                  renderValue={(selected) => selected.join(', ')}
+                >
+                  {unitOptions.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth required>
+                <InputLabel id="base-unit-label">Base Unit (for storage)</InputLabel>
+                <Select
+                  labelId="base-unit-label"
+                  name="baseUnit"
+                  value={form.baseUnit}
+                  label="Base Unit (for storage)"
+                  onChange={handleChange}
+                >
+                  {unitOptions.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {form.baseUnit === 'Whole/Package' && (
+                <TextField
+                  name="conversionRate"
+                  label={`How many slices are in a Whole/Package?`}
+                  type="number"
+                  value={conversionRate}
+                  onChange={handleChange}
+                  required
+                  inputProps={{ min: 1 }}
+                />
+              )}
               <TextField
                 name="quantityInStock"
                 label="Quantity in Stock"
+                type="number"
                 value={form.quantityInStock}
                 onChange={handleChange}
                 required
+                inputProps={{ min: 0, step: 'any' }}
               />
-              <FormControl>
-                <InputLabel>Is Perishable</InputLabel>
-                <Select
-                  name="isPerishable"
-                  value={form.isPerishable}
-                  label="Is Perishable"
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Y">Yes</MenuItem>
-                  <MenuItem value="N">No</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                name="max"
+                label="Max"
+                type="number"
+                value={form.max}
+                onChange={handleChange}
+                required
+                inputProps={{ min: 1 }}
+              />
             </Box>
 
             <Box mt={3}>
               <Button variant="contained" color="primary" type="submit">
-                {editingItem ? 'Update Item' : 'Add Item'}
+                {editingItem ? 'Update Inventory' : 'Submit Inventory'}
               </Button>
               {editingItem && (
-                <Button sx={{ ml: 2 }} onClick={() => setEditingItem(null)} color="secondary">
+                <Button sx={{ ml: 2 }} onClick={handleCancel} color="secondary">
                   Cancel
                 </Button>
               )}
@@ -188,30 +324,34 @@ export default function InventoryPage() {
         </Paper>
 
         <Typography variant="h6" gutterBottom>
-          Inventory Items
+          Inventory List
         </Typography>
         <Paper elevation={2}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Vendor</TableCell>
-                <TableCell>Unit</TableCell>
-                <TableCell>Cost</TableCell>
-                <TableCell>Qty</TableCell>
-                <TableCell>Perishable</TableCell>
+                <TableCell>Item</TableCell>
+                <TableCell>Allowed Units</TableCell>
+                <TableCell>Base Unit</TableCell>
+                <TableCell>Number in Whole/Package</TableCell>
+                <TableCell>Qty In Stock</TableCell>
+                <TableCell>Max</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.itemId}>
+            <TableBody> 
+              {Array.isArray(items) && items.map(item => (
+                <TableRow key={item.id}>
                   <TableCell>{item.itemName}</TableCell>
-                  <TableCell>{item.vendor}</TableCell>
-                  <TableCell>{item.unit}</TableCell>
-                  <TableCell>${item.unitCost}</TableCell>
-                  <TableCell>{item.quantityInStock}</TableCell>
-                  <TableCell>{item.isPerishable === 'Y' ? 'Yes' : 'No'}</TableCell>
+                  <TableCell>{(item.allowedUnits || []).join(', ')}</TableCell>
+                  <TableCell>{item.baseUnit}</TableCell>
+                  <TableCell>
+                    {item.baseUnit !== 'Whole/Package'
+                      ? 'N/A'
+                      : item.conversionRate || 'Not found'}
+                  </TableCell>
+                  <TableCell>{Math.ceil(Number(item.quantityInStock))}</TableCell>
+                  <TableCell>{item.max}</TableCell>
                   <TableCell>
                     <Button size="small" onClick={() => handleEdit(item)}>
                       Edit
@@ -226,20 +366,46 @@ export default function InventoryPage() {
           </Table>
         </Paper>
 
-        {/* Material UI Delete Confirmation Dialog */}
-        <Dialog
-          open={confirmOpen}
-          onClose={() => setConfirmOpen(false)}
-        >
-          <DialogTitle>Delete Item</DialogTitle>
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+          <DialogTitle>Delete Inventory</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete <strong>{itemToDelete?.itemName}</strong>?
+              Are you sure you want to delete this inventory item?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button onClick={confirmDelete} color="error">Delete</Button>
+            <Button onClick={confirmDelete} color="error">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={ingredientInUseOpen} onClose={() => setIngredientInUseOpen(false)}>
+          <DialogTitle>Cannot Delete Ingredient</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              This ingredient is used in one or more recipes. Please remove it from all recipes before deleting.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIngredientInUseOpen(false)} color="primary">
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={duplicateDialogOpen} onClose={() => setDuplicateDialogOpen(false)}>
+          <DialogTitle>Duplicate Item Name</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              An inventory item with this name already exists. Please use a unique name.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDuplicateDialogOpen(false)} color="primary">
+              OK
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>

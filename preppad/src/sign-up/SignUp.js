@@ -76,6 +76,16 @@ export default function SignUp(props) {
     name: '',
   });
 
+  // Autofill fix style to remove dark blue autofill background
+  const textFieldSx = {
+    '& input:-webkit-autofill': {
+      WebkitBoxShadow: '0 0 0 1000px white inset !important', // replace 'white' with background color if needed
+      boxShadow: '0 0 0 1000px white inset !important',
+      WebkitTextFillColor: '#000000 !important',
+      transition: 'background-color 5000s ease-in-out 0s',
+    },
+  };
+
   const validateInputs = () => {
     const username = document.getElementById('username')?.value.trim();
     const businessName = document.getElementById('businessName')?.value.trim();
@@ -180,7 +190,11 @@ export default function SignUp(props) {
       <CssBaseline enableColorScheme />
       <SignUpContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
-          <Typography component="h1" variant="h4" sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}>
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
+          >
             Sign up
           </Typography>
           <Box
@@ -199,6 +213,7 @@ export default function SignUp(props) {
                 error={errors.username}
                 helperText={errorMessages.username}
                 color={errors.username ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <FormControl>
@@ -212,6 +227,7 @@ export default function SignUp(props) {
                 error={errors.businessName}
                 helperText={errorMessages.businessName}
                 color={errors.businessName ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <FormControl>
@@ -225,6 +241,7 @@ export default function SignUp(props) {
                 error={errors.name}
                 helperText={errorMessages.name}
                 color={errors.name ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <FormControl>
@@ -238,6 +255,7 @@ export default function SignUp(props) {
                 error={errors.email}
                 helperText={errorMessages.email}
                 color={errors.email ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <FormControl>
@@ -252,6 +270,7 @@ export default function SignUp(props) {
                 error={errors.password}
                 helperText={errorMessages.password}
                 color={errors.password ? 'error' : 'primary'}
+                sx={textFieldSx}
               />
             </FormControl>
             <Button type="submit" fullWidth variant="contained">

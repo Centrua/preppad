@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { Box, Paper, Button } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 const columns = [
@@ -8,7 +17,7 @@ const columns = [
     field: 'item',
     headerName: 'Item',
     flex: 1,
-    editable: true,
+    editable: false, // Item name should not be editable
     headerAlign: 'center',
     align: 'center',
   },
@@ -25,137 +34,150 @@ const columns = [
       return isNaN(parsed) ? 0 : parsed;
     },
   },
-  {
-    field: 'unitPrice',
-    headerName: 'Cheapest Unit Price',
-    type: 'number',
-    flex: 1,
-    editable: true,
-    headerAlign: 'center',
-    align: 'center',
-    valueFormatter: (value) => {
-      return "$" + String(Number(value).toFixed(2))
-    },
-  },
-  {
-    field: 'vendor',
-    headerName: 'Vendor/Store',
-    flex: 1.2,
-    editable: true,
-    headerAlign: 'center',
-    align: 'center',
-  },
-  {
-    field: 'totalPrice',
-    headerName: 'Total Price',
-    flex: 1,
-    headerAlign: 'center',
-    align: 'center',
-    type: 'number',
-    sortable: false,
-    valueGetter: (value, row) => {
-      return row.quantity*row.unitPrice;
-    },
-        valueFormatter: (value, row) => {
-      return "$" + String(Number(value).toFixed(2))
-    },
-  },
 ];
 
 export default function ShoppingListPage() {
-  const [rows, setRows] = useState([
-    { id: 1, item: 'Apples', quantity: 3, unitPrice: 0.5, vendor: 'Walmart' },
-    { id: 2, item: 'Milk', quantity: 2, unitPrice: 1.2, vendor: 'Target' },
-    { id: 3, item: 'Bread', quantity: 1, unitPrice: 2.0, vendor: 'Costco' },
-    { id: 4, item: 'Eggs', quantity: 12, unitPrice: 0.15, vendor: 'Kroger' },
-  ]);
+  const [rows, setRows] = useState([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
+
+  const openDialog = (message) => {
+    setDialogMessage(message);
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+  };
+
+  useEffect(() => {
+    const fetchShoppingList = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+        const response = await fetch(`${API_BASE}/shopping-list`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+        if (response.ok && data) {
+          const { itemIds, itemNames, quantities } = data;
+
+          // Build rows from itemIds, itemNames, and quantities
+          const newRows = (itemIds || []).map((itemId, index) => ({
+            id: itemId,
+            item: (itemNames && itemNames[index]) || 'Unnamed Item',
+            quantity: (quantities && quantities[index]) || 0,
+          }));
+          setRows(newRows);
+        } else {
+          console.error('Failed to load shopping list:', data.error);
+        }
+      } catch (err) {
+        console.error('Error fetching shopping list:', err);
+      }
+    };
+
+    fetchShoppingList();
+  }, []);
 
   const handleProcessRowUpdate = (newRow) => {
     const quantity = Number(newRow.quantity);
-    const unitPrice = Number(newRow.unitPrice);
-
     const cleanRow = {
       ...newRow,
       quantity: isNaN(quantity) ? 0 : quantity,
-      unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
     };
-
-    setRows((prev) =>
-      prev.map((row) => (row.id === cleanRow.id ? cleanRow : row))
-    );
-
+    setRows((prev) => prev.map((row) => (row.id === cleanRow.id ? cleanRow : row)));
     return cleanRow;
   };
 
   const handleSubmitPurchase = async () => {
     try {
       if (rows.length === 0) {
-        alert('No items to submit');
+        openDialog('No items to submit');
         return;
       }
 
       const itemIds = rows.map((row) => row.id);
       const quantities = rows.map((row) => row.quantity);
-      const unitPrices = rows.map((row) => row.unitPrice);
-      const vendors = rows.map((row) => row.vendor);
-      const totalPrice = rows.reduce(
-        (sum, row) => sum + row.quantity * row.unitPrice,
-        0
-      );
 
       const payload = {
         itemIds,
         quantities,
-        cheapestUnitPrice: unitPrices, // sending full array of unit prices
-        vendor: vendors.join(', '),
-        totalPrice,
       };
 
-      const response = await fetch('/pending-purchase', {
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+      const token = localStorage.getItem('token');
+
+      const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
         method: 'POST',
         headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
+      const result = await purchaseRes.json();
 
-      if (response.ok) {
-        alert('Purchase submitted successfully!');
-        console.log(result);
+      if (purchaseRes.ok) {
+        const clearRes = await fetch(`${API_BASE}/shopping-list/clear`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!clearRes.ok) {
+          console.warn('Shopping list was submitted but not cleared.');
+        }
+
+        openDialog('Purchase submitted successfully!');
+        setRows([]);
       } else {
-        alert('Error: ' + (result.error || 'Unknown error'));
+        openDialog('Error: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error submitting purchase:', error);
-      alert('Failed to submit purchase');
+      openDialog('Failed to submit purchase');
     }
   };
 
   return (
-  <Layout>
-    <Box sx={{ width: '100%', px: 2, mt: 4 }}>
-      <Paper sx={{ width: '100%', p: 2 }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          processRowUpdate={handleProcessRowUpdate}
-          experimentalFeatures={{ newEditingApi: true }}
-          disableRowSelectionOnClick
-          autoHeight
-        />
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmitPurchase}
-          >
-            Submit To Pending Purchases
+    <Layout>
+      <Box sx={{ width: '100%', px: 2, mt: 4 }}>
+        <Paper sx={{ width: '100%', p: 2 }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            processRowUpdate={handleProcessRowUpdate}
+            experimentalFeatures={{ newEditingApi: true }}
+            disableRowSelectionOnClick
+            autoHeight
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
+              Submit To Pending Purchases
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Dialog */}
+      <Dialog open={dialogOpen} onClose={closeDialog}>
+        <DialogTitle>Notification</DialogTitle>
+        <DialogContent>
+          <Typography>{dialogMessage}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog} color="primary">
+            OK
           </Button>
-        </Box>
-      </Paper>
-    </Box>
-  </Layout>
-);
+        </DialogActions>
+      </Dialog>
+    </Layout>
+  );
 }
