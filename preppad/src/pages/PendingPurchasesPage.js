@@ -227,7 +227,7 @@ export default function PendingPurchasesPage() {
   }
 };
 
-
+// 
   if (loading) {
     return (
       <Layout>
