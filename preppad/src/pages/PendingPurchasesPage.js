@@ -24,7 +24,7 @@ import PrintIcon from '@mui/icons-material/Print';
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
 export default function PendingPurchasesPage() {
-  const [allPurchases, setAllPurchases] = useState([]); // Store all purchases
+  const [allPurchases, setAllPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -37,9 +37,12 @@ export default function PendingPurchasesPage() {
   const [printText, setPrintText] = useState('');
   const [showPrintDialog, setShowPrintDialog] = useState(false);
 
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [purchaseToDelete, setPurchaseToDelete] = useState(null);
+
   const token = localStorage.getItem('token');
 
-  // Fetch all purchases, don't filter here
   const fetchPendingPurchases = async () => {
     try {
       const res = await fetch(`${API_BASE}/pending-purchase`, {
@@ -47,7 +50,7 @@ export default function PendingPurchasesPage() {
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      setAllPurchases(data); // Store all purchases
+      setAllPurchases(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -57,13 +60,16 @@ export default function PendingPurchasesPage() {
 
   useEffect(() => {
     fetchPendingPurchases();
-  }, [token]); // Only run on mount or token change
+  }, [token]);
 
   const handleOpenDialog = (purchase) => {
     setSelectedPurchase(purchase);
     setQuantities([...purchase.quantities]);
-    // If completed, show the saved totalPrice; otherwise, clear for input
-    setTotalPrice(purchase.status === 'completed' && purchase.totalPrice != null ? String(purchase.totalPrice) : '');
+    setTotalPrice(
+      purchase.status === 'completed' && purchase.totalPrice != null
+        ? String(purchase.totalPrice)
+        : ''
+    );
     setOpenDialog(true);
   };
 
@@ -77,8 +83,7 @@ export default function PendingPurchasesPage() {
 
   const handleQuantityChange = (index, value) => {
     const newQuantities = [...quantities];
-    const newValue = Number(value) || 0;
-    newQuantities[index] = newValue;
+    newQuantities[index] = Number(value) || 0;
     setQuantities(newQuantities);
   };
 
@@ -113,7 +118,7 @@ export default function PendingPurchasesPage() {
         setFormError(`Failed to confirm purchase: ${errData.error || res.statusText}`);
         return;
       }
-      // Call the diff-to-shopping-list endpoint with confirmed quantities
+
       await fetch(
         `${API_BASE}/pending-purchase/${selectedPurchase.id}/diff-to-shopping-list`,
         {
@@ -125,7 +130,7 @@ export default function PendingPurchasesPage() {
           body: JSON.stringify({ confirmedQuantities: quantities }),
         }
       );
-      // Call the update-inventory endpoint with itemIds and their confirmed quantities
+
       await fetch(
         `${API_BASE}/pending-purchase/${selectedPurchase.id}/update-inventory`,
         {
@@ -137,7 +142,7 @@ export default function PendingPurchasesPage() {
           body: JSON.stringify({ itemIds: selectedPurchase.itemIds, quantities }),
         }
       );
-      // Update all purchases after confirming
+
       await fetchPendingPurchases();
       handleCloseDialog();
     } catch (err) {
@@ -146,7 +151,6 @@ export default function PendingPurchasesPage() {
     }
   };
 
-  // Helper to get printable/copyable text for a purchase
   const getPurchaseText = (purchase) => {
     const lines = purchase.itemNames.map((name, idx) =>
       `${name}: ${purchase.quantities[idx]}`
@@ -157,12 +161,14 @@ export default function PendingPurchasesPage() {
   const handleCopy = (purchase) => {
     const text = getPurchaseText(purchase);
     navigator.clipboard.writeText(text);
+    alert('Copied purchase details to clipboard!');
   };
 
   const handlePrint = (purchase) => {
     setPrintText(getPurchaseText(purchase));
     setShowPrintDialog(true);
   };
+
   const handlePrintDialog = () => {
     if (printRef.current) {
       const printContents = printRef.current.innerText;
@@ -175,10 +181,53 @@ export default function PendingPurchasesPage() {
     }
     setShowPrintDialog(false);
   };
+
   const handleClosePrintDialog = () => {
     setShowPrintDialog(false);
   };
 
+  // Delete dialog handlers
+  const openDeleteDialog = (purchaseId) => {
+    setPurchaseToDelete(purchaseId);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setPurchaseToDelete(null);
+    setDeleteDialogOpen(false);
+  };
+
+  const handleDeletePurchase = async () => {
+  if (!purchaseToDelete) return;
+  try {
+    const res = await fetch(
+      `${API_BASE}/pending-purchase/${purchaseToDelete}/update-pending-purchases`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    let errMessage = `Failed to delete purchase ${purchaseToDelete}`;
+    try {
+      const errData = await res.json();
+      if (errData.error) errMessage = errData.error;
+    } catch (_) {}
+
+    if (!res.ok) {
+      throw new Error(errMessage);
+    }
+
+    setAllPurchases((prev) => prev.filter(p => p.id !== purchaseToDelete));
+    closeDeleteDialog();
+    // Removed alert for successful deletion
+  } catch (err) {
+    console.error(err);
+    alert(`Error deleting purchase: ${err.message}`);
+  }
+};
+
+// 
   if (loading) {
     return (
       <Layout>
@@ -207,6 +256,7 @@ export default function PendingPurchasesPage() {
         <Typography variant="h5" gutterBottom>
           Pending Purchases
         </Typography>
+
         <Box mb={2} display="flex" alignItems="center" gap={2}>
           <Typography>Status:</Typography>
           <Button
@@ -224,6 +274,7 @@ export default function PendingPurchasesPage() {
             Completed
           </Button>
         </Box>
+
         <Paper>
           <Table aria-label="pending purchases table">
             <TableHead>
@@ -276,6 +327,15 @@ export default function PendingPurchasesPage() {
                       >
                         <PrintIcon fontSize="small" />
                       </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        sx={{ ml: 1 }}
+                        onClick={() => openDeleteDialog(purchase.id)}
+                        title="Delete purchase"
+                      >
+                        Delete
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -283,9 +343,13 @@ export default function PendingPurchasesPage() {
           </Table>
         </Paper>
 
-        {/* Dialog */}
+        {/* Confirm/View Dialog */}
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-          <DialogTitle>{selectedPurchase && selectedPurchase.status === 'completed' ? 'View Purchase List' : 'Confirm Purchase List'}</DialogTitle>
+          <DialogTitle>
+            {selectedPurchase && selectedPurchase.status === 'completed'
+              ? 'View Purchase List'
+              : 'Confirm Purchase List'}
+          </DialogTitle>
           <DialogContent dividers>
             {formError && (
               <Typography color="error" align="center" sx={{ mb: 2 }}>
@@ -306,43 +370,24 @@ export default function PendingPurchasesPage() {
                   <Table
                     size="small"
                     aria-label="items table"
-                    sx={{
-                      width: '100%',
-                      tableLayout: 'fixed',
-                      marginLeft: 'auto',
-                      marginRight: 'auto',
-                    }}
+                    sx={{ width: '100%', tableLayout: 'fixed', marginLeft: 'auto', marginRight: 'auto' }}
                   >
                     <TableHead>
                       <TableRow>
-                        <TableCell
-                          align="left"
-                          sx={{ minWidth: 120, fontWeight: 'bold' }}
-                        >
-                          Item Name
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ width: 150, fontWeight: 'bold' }}
-                        >
-                          Quantity Purchased
-                        </TableCell>
+                        <TableCell align="left" sx={{ minWidth: 120, fontWeight: 'bold' }}>Item Name</TableCell>
+                        <TableCell align="center" sx={{ width: 150, fontWeight: 'bold' }}>Quantity Purchased</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {selectedPurchase.itemNames.map((itemName, idx) => (
                         <TableRow key={`${selectedPurchase.id}-${idx}`}>
-                          <TableCell align="left" sx={{ px: 2 }}>
-                            {itemName}
-                          </TableCell>
+                          <TableCell align="left" sx={{ px: 2 }}>{itemName}</TableCell>
                           <TableCell align="center" sx={{ px: 2 }}>
                             <TextField
                               type="number"
                               size="small"
                               value={quantities[idx]}
-                              onChange={(e) =>
-                                handleQuantityChange(idx, e.target.value)
-                              }
+                              onChange={(e) => handleQuantityChange(idx, e.target.value)}
                               inputProps={{ min: 0, style: { textAlign: 'center' }, readOnly: selectedPurchase.status === 'completed' }}
                               sx={{ width: 80, mx: 'auto', display: 'block' }}
                               disabled={selectedPurchase.status === 'completed'}
@@ -354,19 +399,8 @@ export default function PendingPurchasesPage() {
                   </Table>
                 </TableContainer>
 
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 2,
-                    marginTop: 3,
-                  }}
-                >
-                  <Typography
-                    variant="subtitle1"
-                    sx={{ minWidth: 130, textAlign: 'right' }}
-                  >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, marginTop: 3 }}>
+                  <Typography variant="subtitle1" sx={{ minWidth: 130, textAlign: 'right' }}>
                     Total Price ($):
                   </Typography>
                   <TextField
@@ -375,12 +409,7 @@ export default function PendingPurchasesPage() {
                     value={totalPrice}
                     onChange={handleTotalPriceChange}
                     placeholder="Enter total price"
-                    inputProps={{
-                      min: 0,
-                      step: '0.01',
-                      style: { textAlign: 'center' },
-                      readOnly: selectedPurchase.status === 'completed',
-                    }}
+                    inputProps={{ min: 0, step: '0.01', style: { textAlign: 'center' }, readOnly: selectedPurchase.status === 'completed' }}
                     sx={{ width: 140 }}
                     disabled={selectedPurchase.status === 'completed'}
                   />
@@ -389,16 +418,9 @@ export default function PendingPurchasesPage() {
             )}
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
-            <Button onClick={handleCloseDialog} color="inherit">
-              Close
-            </Button>
+            <Button onClick={handleCloseDialog} color="inherit">Close</Button>
             {selectedPurchase && selectedPurchase.status !== 'completed' && (
-              <Button
-                onClick={handleConfirm}
-                variant="contained"
-                color="success"
-                sx={{ fontWeight: 'bold', minWidth: 140 }}
-              >
+              <Button onClick={handleConfirm} variant="contained" color="success" sx={{ fontWeight: 'bold', minWidth: 140 }}>
                 Confirm List
               </Button>
             )}
@@ -416,6 +438,19 @@ export default function PendingPurchasesPage() {
             <Button onClick={handlePrintDialog} variant="contained" color="primary">Print</Button>
           </DialogActions>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
+          <DialogTitle>Confirm Deletion</DialogTitle>
+          <DialogContent>
+            <Typography>Are you sure you want to delete this purchase?</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDeleteDialog} color="inherit">Cancel</Button>
+            <Button onClick={handleDeletePurchase} color="error" variant="contained">Delete</Button>
+          </DialogActions>
+        </Dialog>
+
       </Box>
     </Layout>
   );
