@@ -11,7 +11,7 @@ import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import AppTheme from '../shared-theme/AppTheme';
 
@@ -59,6 +59,10 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 
 export default function SignUp(props) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const businessNameFromUrl = queryParams.get('businessName') || '';
 
   const [errors, setErrors] = React.useState({
     username: false,
@@ -74,6 +78,10 @@ export default function SignUp(props) {
     email: '',
     password: '',
     name: '',
+  });
+
+  const [formValues, setFormValues] = React.useState({
+    businessName: businessNameFromUrl,
   });
 
   // Autofill fix style to remove dark blue autofill background
@@ -185,6 +193,11 @@ export default function SignUp(props) {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
   return (
     <AppTheme {...props}>
       <CssBaseline enableColorScheme />
@@ -199,6 +212,7 @@ export default function SignUp(props) {
           </Typography>
           <Box
             component="form"
+            noValidate
             onSubmit={handleSubmit}
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
@@ -214,6 +228,7 @@ export default function SignUp(props) {
                 helperText={errorMessages.username}
                 color={errors.username ? 'error' : 'primary'}
                 sx={textFieldSx}
+                onChange={handleInputChange}
               />
             </FormControl>
             <FormControl>
@@ -228,6 +243,8 @@ export default function SignUp(props) {
                 helperText={errorMessages.businessName}
                 color={errors.businessName ? 'error' : 'primary'}
                 sx={textFieldSx}
+                value={formValues.businessName}
+                onChange={handleInputChange}
               />
             </FormControl>
             <FormControl>
@@ -242,6 +259,7 @@ export default function SignUp(props) {
                 helperText={errorMessages.name}
                 color={errors.name ? 'error' : 'primary'}
                 sx={textFieldSx}
+                onChange={handleInputChange}
               />
             </FormControl>
             <FormControl>
@@ -256,6 +274,7 @@ export default function SignUp(props) {
                 helperText={errorMessages.email}
                 color={errors.email ? 'error' : 'primary'}
                 sx={textFieldSx}
+                onChange={handleInputChange}
               />
             </FormControl>
             <FormControl>
@@ -271,6 +290,7 @@ export default function SignUp(props) {
                 helperText={errorMessages.password}
                 color={errors.password ? 'error' : 'primary'}
                 sx={textFieldSx}
+                onChange={handleInputChange}
               />
             </FormControl>
             <Button type="submit" fullWidth variant="contained">
