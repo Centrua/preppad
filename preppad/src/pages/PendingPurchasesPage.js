@@ -273,6 +273,7 @@ export default function PendingPurchasesPage() {
                 <TableCell>Purchase ID</TableCell>
                 <TableCell>Item Name</TableCell>
                 <TableCell>Quantity</TableCell>
+                <TableCell>Date</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -293,6 +294,7 @@ export default function PendingPurchasesPage() {
                         ? purchase.quantities[0]
                         : ''}
                     </TableCell>
+                    <TableCell>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
                     <TableCell align="center">
                       <Button
                         variant="contained"
