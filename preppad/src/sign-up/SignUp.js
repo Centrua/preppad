@@ -217,21 +217,6 @@ export default function SignUp(props) {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <FormControl>
-              <FormLabel htmlFor="username">Username</FormLabel>
-              <TextField
-                id="username"
-                name="username"
-                placeholder="yourusername"
-                required
-                fullWidth
-                error={errors.username}
-                helperText={errorMessages.username}
-                color={errors.username ? 'error' : 'primary'}
-                sx={textFieldSx}
-                onChange={handleInputChange}
-              />
-            </FormControl>
-            <FormControl>
               <FormLabel htmlFor="businessName">Business Name</FormLabel>
               <TextField
                 id="businessName"
@@ -244,6 +229,22 @@ export default function SignUp(props) {
                 color={errors.businessName ? 'error' : 'primary'}
                 sx={textFieldSx}
                 value={formValues.businessName}
+                InputProps={{ readOnly: true }}
+                onChange={handleInputChange}
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel htmlFor="username">Username</FormLabel>
+              <TextField
+                id="username"
+                name="username"
+                placeholder="yourusername"
+                required
+                fullWidth
+                error={errors.username}
+                helperText={errorMessages.username}
+                color={errors.username ? 'error' : 'primary'}
+                sx={textFieldSx}
                 onChange={handleInputChange}
               />
             </FormControl>
