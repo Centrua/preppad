@@ -198,13 +198,28 @@ export default function ShoppingListPage() {
     const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
     if (!ingredient) return;
 
-    const newItemRow = {
-      id: ingredient.id, // Use the ingredient's ID
-      item: ingredient.name, // Use the ingredient's name for display
-      quantity: newQuantity,
-    };
+    setRows((prev) => {
+      const existingRow = prev.find((row) => row.id === ingredient.id);
+      if (existingRow) {
+        // Update the quantity of the existing row
+        return prev.map((row) =>
+          row.id === ingredient.id
+            ? { ...row, quantity: row.quantity + newQuantity }
+            : row
+        );
+      } else {
+        // Add a new row
+        return [
+          ...prev,
+          {
+            id: ingredient.id, // Use the ingredient's ID
+            item: ingredient.name, // Use the ingredient's name for display
+            quantity: newQuantity,
+          },
+        ];
+      }
+    });
 
-    setRows((prev) => [...prev, newItemRow]);
     setSelectedIngredient('');
     setNewQuantity(1);
   };
