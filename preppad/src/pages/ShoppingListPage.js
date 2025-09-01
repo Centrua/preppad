@@ -9,8 +9,11 @@ import {
   DialogContent,
   DialogActions,
   Typography,
+  TextField,
+  MenuItem,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import { jwtDecode } from 'jwt-decode';
 
 const columns = [
   {
@@ -40,6 +43,10 @@ export default function ShoppingListPage() {
   const [rows, setRows] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
+  const [newItem, setNewItem] = useState('');
+  const [newQuantity, setNewQuantity] = useState(1);
+  const [ingredients, setIngredients] = useState([]);
+  const [selectedIngredient, setSelectedIngredient] = useState('');
 
   const openDialog = (message) => {
     setDialogMessage(message);
@@ -82,6 +89,45 @@ export default function ShoppingListPage() {
     };
 
     fetchShoppingList();
+  }, []);
+
+  useEffect(() => {
+    const fetchIngredients = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No token found');
+          return;
+        }
+
+        const decodedToken = jwtDecode(token);
+        const businessId = decodedToken.businessId; // Extract businessId from the decoded token
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+        const response = await fetch(`${API_BASE}/ingredients?businessId=${businessId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+            const formattedIngredients = data.map((ingredient) => ({
+              id: ingredient.id,
+              name: ingredient.itemName, // Use itemName for display
+              baseUnit: ingredient.baseUnit, // Include base unit for context
+              allowedUnits: ingredient.allowedUnits, // Include allowed units for context
+            }));
+            setIngredients(formattedIngredients);
+        } else {
+          console.error('Failed to fetch ingredients');
+        }
+      } catch (error) {
+        console.error('Error fetching ingredients:', error);
+      }
+    };
+
+    fetchIngredients();
   }, []);
 
   const handleProcessRowUpdate = (newRow) => {
@@ -146,6 +192,23 @@ export default function ShoppingListPage() {
     }
   };
 
+  const handleAddItem = () => {
+    if (!selectedIngredient) return;
+
+    const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
+    if (!ingredient) return;
+
+    const newItemRow = {
+      id: ingredient.id, // Use the ingredient's ID
+      item: ingredient.name, // Use the ingredient's name for display
+      quantity: newQuantity,
+    };
+
+    setRows((prev) => [...prev, newItemRow]);
+    setSelectedIngredient('');
+    setNewQuantity(1);
+  };
+
   return (
     <Layout>
       <Box sx={{ width: '100%', px: 2, mt: 4 }}>
@@ -161,6 +224,35 @@ export default function ShoppingListPage() {
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
             <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
               Submit To Pending Purchases
+            </Button>
+          </Box>
+
+          {/* Add Item Section */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, mt: 4 }}>
+            <TextField
+              select
+              label="Select Ingredient"
+              value={selectedIngredient}
+              onChange={(e) => setSelectedIngredient(e.target.value)}
+              variant="outlined"
+              style={{ flex: 1, marginRight: '8px' }}
+            >
+              {ingredients.map((ingredient) => (
+                <MenuItem key={ingredient.id} value={ingredient.name}>
+                  {`${ingredient.name} (${ingredient.baseUnit})`}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Quantity"
+              type="number"
+              value={newQuantity}
+              onChange={(e) => setNewQuantity(Number(e.target.value))}
+              variant="outlined"
+              style={{ width: '100px', marginRight: '8px' }}
+            />
+            <Button variant="contained" color="secondary" onClick={handleAddItem}>
+              Add Item
             </Button>
           </Box>
         </Paper>
