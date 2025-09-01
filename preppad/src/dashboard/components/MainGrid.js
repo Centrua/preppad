@@ -5,6 +5,7 @@ import Copyright from '../internals/components/Copyright';
 import ComingSoonCard from './ComingSoonCard';
 import OverstockedIngredientsCard from './OverstockedIngredientsCard';
 import UnderstockedIngredientsCard from './UnderstockedIngredientsCard';
+import TotalCostCard from './TotalCostCard';
 
 export default function MainGrid() {
   return (
@@ -20,6 +21,16 @@ export default function MainGrid() {
         sx={{ mb: (theme) => theme.spacing(2) }}
       >
         <ComingSoonCard />
+      </Grid>
+      <Grid
+        container
+        spacing={2}
+        columns={12}
+        sx={{ mb: (theme) => theme.spacing(2) }}
+      >
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <TotalCostCard />
+        </Grid>
       </Grid>
 
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
