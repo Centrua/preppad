@@ -265,7 +265,7 @@ export default function PendingPurchasesPage() {
           </Button>
         </Box>
 
-        <Paper>
+        <Paper elevation={3}>
           <Table aria-label="pending purchases table">
             <TableHead>
               <TableRow>

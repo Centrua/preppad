@@ -326,7 +326,7 @@ export default function InventoryPage() {
         <Typography variant="h6" gutterBottom>
           Inventory List
         </Typography>
-        <Paper elevation={2}>
+        <Paper elevation={3}>
           <Table>
             <TableHead>
               <TableRow>
