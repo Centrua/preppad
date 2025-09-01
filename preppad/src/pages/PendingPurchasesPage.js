@@ -33,6 +33,7 @@ export default function PendingPurchasesPage() {
   const [totalPrice, setTotalPrice] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [formError, setFormError] = useState('');
+  const [purchaseLocation, setPurchaseLocation] = useState('');
   const printRef = useRef();
   const [printText, setPrintText] = useState('');
   const [showPrintDialog, setShowPrintDialog] = useState(false);
@@ -70,6 +71,7 @@ export default function PendingPurchasesPage() {
         ? String(purchase.totalPrice)
         : ''
     );
+    setPurchaseLocation('location'); // Default to 'location'
     setOpenDialog(true);
   };
 
@@ -78,6 +80,7 @@ export default function PendingPurchasesPage() {
     setSelectedPurchase(null);
     setQuantities([]);
     setTotalPrice('');
+    setPurchaseLocation('');
     setFormError('');
   };
 
@@ -97,10 +100,12 @@ export default function PendingPurchasesPage() {
   const handleConfirm = async () => {
     if (!selectedPurchase || !selectedPurchase.id) return;
     setFormError('');
-    if (!totalPrice || isNaN(Number(totalPrice)) || Number(totalPrice) < 0) {
-      setFormError('Total price is required and must be a positive number.');
+
+    if (!purchaseLocation) {
+      setFormError('Purchase location is required.');
       return;
     }
+
     try {
       const res = await fetch(
         `${API_BASE}/pending-purchase/${selectedPurchase.id}/complete`,
@@ -110,38 +115,18 @@ export default function PendingPurchasesPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ totalPrice: Number(totalPrice) }),
+          body: JSON.stringify({
+            totalPrice: totalPrice ? Number(totalPrice) : null, // Make totalPrice optional
+            purchaseLocation,
+          }),
         }
       );
+
       if (!res.ok) {
         const errData = await res.json();
         setFormError(`Failed to confirm purchase: ${errData.error || res.statusText}`);
         return;
       }
-
-      await fetch(
-        `${API_BASE}/pending-purchase/${selectedPurchase.id}/diff-to-shopping-list`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ confirmedQuantities: quantities }),
-        }
-      );
-
-      await fetch(
-        `${API_BASE}/pending-purchase/${selectedPurchase.id}/update-inventory`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ itemIds: selectedPurchase.itemIds, quantities }),
-        }
-      );
 
       await fetchPendingPurchases();
       handleCloseDialog();
@@ -249,6 +234,11 @@ export default function PendingPurchasesPage() {
       </Layout>
     );
   }
+
+  const purchaseLocationOptions = [
+    { value: 'location', label: 'Location' },
+    { value: 'online', label: 'Online' },
+  ];
 
   return (
     <Layout>
@@ -414,6 +404,24 @@ export default function PendingPurchasesPage() {
                     disabled={selectedPurchase.status === 'completed'}
                   />
                 </Box>
+
+                <TextField
+                  select
+                  label="Purchase Location"
+                  value={purchaseLocation}
+                  onChange={(e) => setPurchaseLocation(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  SelectProps={{
+                    native: true,
+                  }}
+                >
+                  {purchaseLocationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </TextField>
               </>
             )}
           </DialogContent>
