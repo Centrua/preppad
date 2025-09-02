@@ -13,6 +13,7 @@ import {
 import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const columns = [
   {
@@ -326,9 +327,7 @@ export default function ShoppingListPage() {
           cursor: 'pointer',
         }}
       >
-        <Typography variant="body1" align="center" style={{ color: '#721c24' }}>
-          Trash
-        </Typography>
+        <DeleteIcon style={{ color: '#721c24', fontSize: '48px' }} />
       </div>
     );
   };
