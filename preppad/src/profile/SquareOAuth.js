@@ -28,7 +28,7 @@ const xThemeComponents = {
 const SquareOAuth = () => {
   const [connected, setConnected] = useState(null);
   const squareAppId = process.env.REACT_APP_SQUARE_APP_ID;
-  const redirectUri = encodeURIComponent('http://localhost:3000/square-callback');
+  const redirectUri = encodeURIComponent(`${process.env.REACT_APP_CALLBACK_URL}/square-callback`);
   const scopes = encodeURIComponent('MERCHANT_PROFILE_READ PAYMENTS_READ ITEMS_READ INVENTORY_READ ORDERS_READ');
 
   useEffect(() => {
