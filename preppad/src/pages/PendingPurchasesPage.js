@@ -256,7 +256,7 @@ export default function PendingPurchasesPage() {
     }
   };
 
-// 
+  // 
   if (loading) {
     return (
       <Layout>
@@ -283,6 +283,21 @@ export default function PendingPurchasesPage() {
     { value: 'location', label: 'Location' },
     { value: 'online', label: 'Online' },
   ];
+
+  const renderDeleteButton = (purchase) => {
+    if (purchase.status === 'pending') {
+      return (
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => openDeleteDialog(purchase.id)}
+        >
+          Delete
+        </Button>
+      );
+    }
+    return null;
+  };
 
   return (
     <Layout>
@@ -363,15 +378,7 @@ export default function PendingPurchasesPage() {
                       >
                         <PrintIcon fontSize="small" />
                       </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        sx={{ ml: 1 }}
-                        onClick={() => openDeleteDialog(purchase.id)}
-                        title="Delete purchase"
-                      >
-                        Delete
-                      </Button>
+                      {renderDeleteButton(purchase)}
                     </TableCell>
                   </TableRow>
                 ))}
