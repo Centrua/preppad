@@ -107,13 +107,11 @@ export default function InventoryPage() {
       setFormError('Please specify how many of the allowed unit(s) are in a Whole/Package.');
       return;
     }
-
+//
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
       : `${API_BASE}/ingredients`;
-
-    console.log("token:", token);
 
     try {
       const res = await fetch(endpoint, {
@@ -151,8 +149,38 @@ export default function InventoryPage() {
           if (!updateListRes.ok) {
             const errorData = await updateListRes.json();
             console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+          }
+        } catch (err) {
+          console.error('❌ Error calling /shopping-list/:id:', err);
+        }
+      } else {
+          try {
+          const itemIdRes = await fetch(`${API_BASE}/ingredients/item-id?itemName=${form.itemName}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (itemIdRes.ok) {
+            const { itemId } = await itemIdRes.json();
+
+            const updateListRes = await fetch(`${API_BASE}/shopping-list/${itemId}/shopping-list`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (!updateListRes.ok) {
+              const errorData = await updateListRes.json();
+              console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+            }
           } else {
-            console.log('✅ Shopping list updated for item:', editingItem.id);
+            const errorData = await itemIdRes.json();
+            console.warn('Failed to get item ID:', errorData.error || 'Unknown error');
           }
         } catch (err) {
           console.error('❌ Error calling /shopping-list/:id:', err);
@@ -194,6 +222,7 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     try {
+      // Delete the inventory item
       const res = await fetch(`${API_BASE}/ingredients/${itemToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
@@ -203,11 +232,18 @@ export default function InventoryPage() {
         setIngredientInUseOpen(true);
         return;
       }
+
+      // Delete the corresponding item from the shopping list
+      await fetch(`${API_BASE}/shopping-list/${itemToDelete.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       setConfirmOpen(false);
       setItemToDelete(null);
       fetchItems();
     } catch (err) {
-      console.error('Failed to delete inventory:', err);
+      console.error('Failed to delete inventory or shopping list item:', err);
     }
   };
 
@@ -326,7 +362,7 @@ export default function InventoryPage() {
         <Typography variant="h6" gutterBottom>
           Inventory List
         </Typography>
-        <Paper elevation={2}>
+        <Paper elevation={3}>
           <Table>
             <TableHead>
               <TableRow>

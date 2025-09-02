@@ -492,7 +492,7 @@ export default function RecipePage() {
                 {cat}
               </Typography>
               {catRecipes.map((recipe, index) => (
-                <Paper key={recipe.id || index} elevation={2} sx={{ p: 3, mb: 3 }}>
+                <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
                   <Grid container justifyContent="space-between" alignItems="center">
                     <Grid item>
                       <Typography variant="h6">{recipe.title}</Typography>
@@ -547,7 +547,7 @@ export default function RecipePage() {
               Uncategorized
             </Typography>
             {recipes.filter(r => !r.categories || r.categories.length === 0).map((recipe, index) => (
-              <Paper key={recipe.id || index} elevation={2} sx={{ p: 3, mb: 3 }}>
+              <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
                 <Grid container justifyContent="space-between" alignItems="center">
                   <Grid item>
                     <Typography variant="h6">{recipe.title}</Typography>

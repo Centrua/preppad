@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
+import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
 import {
   Box,
-  Paper,
   Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  Typography,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  TextField,
+  Typography
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { jwtDecode } from 'jwt-decode';
+import { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const columns = [
   {
@@ -40,6 +43,11 @@ export default function ShoppingListPage() {
   const [rows, setRows] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
+  const [newItem, setNewItem] = useState('');
+  const [newQuantity, setNewQuantity] = useState(1);
+  const [ingredients, setIngredients] = useState([]);
+  const [selectedIngredient, setSelectedIngredient] = useState([]);
+  const [customList, setCustomList] = useState([]);
 
   const openDialog = (message) => {
     setDialogMessage(message);
@@ -57,7 +65,8 @@ export default function ShoppingListPage() {
         const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
         const response = await fetch(`${API_BASE}/shopping-list`, {
-          headers: {
+          headers:
+          {
             Authorization: `Bearer ${token}`,
           },
         });
@@ -84,15 +93,44 @@ export default function ShoppingListPage() {
     fetchShoppingList();
   }, []);
 
-  const handleProcessRowUpdate = (newRow) => {
-    const quantity = Number(newRow.quantity);
-    const cleanRow = {
-      ...newRow,
-      quantity: isNaN(quantity) ? 0 : quantity,
+  useEffect(() => {
+    const fetchIngredients = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No token found');
+          return;
+        }
+
+        const decodedToken = jwtDecode(token);
+        const businessId = decodedToken.businessId; // Extract businessId from the decoded token
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+        const response = await fetch(`${API_BASE}/ingredients?businessId=${businessId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const formattedIngredients = data.map((ingredient) => ({
+            id: ingredient.id,
+            name: ingredient.itemName, // Use itemName for display
+            baseUnit: ingredient.baseUnit, // Include base unit for context
+            allowedUnits: ingredient.allowedUnits, // Include allowed units for context
+          }));
+          setIngredients(formattedIngredients);
+        } else {
+          console.error('Failed to fetch ingredients');
+        }
+      } catch (error) {
+        console.error('Error fetching ingredients:', error);
+      }
     };
-    setRows((prev) => prev.map((row) => (row.id === cleanRow.id ? cleanRow : row)));
-    return cleanRow;
-  };
+
+    fetchIngredients();
+  }, []);
 
   const handleSubmitPurchase = async () => {
     try {
@@ -146,24 +184,276 @@ export default function ShoppingListPage() {
     }
   };
 
+  const handleAddItem = () => {
+    if (!selectedIngredient) return;
+
+    const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
+    if (!ingredient) return;
+
+    setRows((prev) => {
+      const existingRow = prev.find((row) => row.id === ingredient.id);
+      if (existingRow) {
+        // Update the quantity of the existing row
+        return prev.map((row) =>
+          row.id === ingredient.id
+            ? { ...row, quantity: row.quantity + newQuantity }
+            : row
+        );
+      } else {
+        // Add a new row
+        return [
+          ...prev,
+          {
+            id: ingredient.id, // Use the ingredient's ID
+            item: ingredient.name, // Use the ingredient's name for display
+            quantity: newQuantity,
+          },
+        ];
+      }
+    });
+
+    setSelectedIngredient('');
+    setNewQuantity(1);
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_BASE}/shopping-list/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setRows((prev) => prev.filter((row) => row.id !== itemId));
+      } else {
+        console.error('Failed to delete item');
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
+  };
+
+  const DraggableRow = ({ row }) => {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: row.id });
+
+    return (
+      <div
+        ref={setNodeRef}
+        {...listeners}
+        {...attributes}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '8px',
+          borderBottom: '1px solid #ddd',
+          cursor: 'grab',
+          backgroundColor: isDragging ? '#cce5ff' : '#f0f8ff',
+          opacity: isDragging ? 0.8 : 1,
+          transform: isDragging ? 'scale(1.05)' : 'none',
+          transition: 'transform 0.2s, background-color 0.2s, opacity 0.2s',
+        }}
+      >
+        <span style={{ flex: 1, textAlign: 'center' }}>{row.item}</span>
+        <span style={{ flex: 1, textAlign: 'center' }}>{row.quantity}</span>
+      </div>
+    );
+  };
+
+  const DroppableContainer = ({ id, children, columns }) => {
+    const { setNodeRef, isOver } = useDroppable({ id });
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={{
+          padding: '16px',
+          backgroundColor: isOver ? '#d4edda' : '#f8f9fa',
+          borderRadius: '4px',
+          transition: 'background-color 0.3s',
+          marginBottom: '16px',
+          minHeight: '300px', // Ensures consistent height
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div style={{ display: 'flex', padding: '8px', backgroundColor: '#e0e0e0', fontWeight: 'bold' }}>
+          {columns.map((col) => (
+            <span key={col.field} style={{ flex: 1, textAlign: 'center' }}>{col.headerName}</span>
+          ))}
+        </div>
+        <div style={{ flex: 1 }}>{children}</div>
+      </div>
+    );
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const draggedItem = rows.find((row) => row.id === active.id) || customList.find((item) => item.id === active.id);
+
+    if (over.id === 'customList' && rows.some((row) => row.id === active.id)) {
+      setCustomList((prev) => [...prev, draggedItem]);
+      setRows((prev) => prev.filter((row) => row.id !== active.id));
+    } else if (over.id === 'shoppingList' && customList.some((item) => item.id === active.id)) {
+      setRows((prev) => [...prev, draggedItem]);
+      setCustomList((prev) => prev.filter((item) => item.id !== active.id));
+    } else if (over.id === 'trash') {
+      handleDeleteItem(active.id);
+    }
+  };
+
+  const TrashContainer = () => {
+    const { setNodeRef, isOver } = useDroppable({ id: 'trash' });
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={{
+          width: '100px',
+          height: '100px',
+          backgroundColor: isOver ? '#ffcccc' : '#f8d7da',
+          borderRadius: '50%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '16px auto',
+          cursor: 'pointer',
+        }}
+      >
+        <DeleteIcon style={{ color: '#721c24', fontSize: '48px' }} />
+      </div>
+    );
+  };
+
+  const handleSubmitCustomList = async () => {
+    try {
+      if (customList.length === 0) {
+        openDialog('No items in the custom list to submit');
+        return;
+      }
+
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+      const token = localStorage.getItem('token');
+
+      const itemIds = customList.map((item) => item.id);
+      const quantities = customList.map((item) => item.quantity);
+
+      const payload = {
+        itemIds,
+        quantities,
+      };
+
+      const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await purchaseRes.json();
+
+      if (purchaseRes.ok) {
+        // Delete items from the base shopping list
+        for (const itemId of itemIds) {
+          await fetch(`${API_BASE}/shopping-list/${itemId}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        }
+
+        openDialog('Custom list submitted to pending purchases!');
+        setCustomList([]);
+      } else {
+        openDialog('Error: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error submitting custom list:', error);
+      openDialog('Failed to submit custom list');
+    }
+  };
+
   return (
     <Layout>
       <Box sx={{ width: '100%', px: 2, mt: 4 }}>
-        <Paper sx={{ width: '100%', p: 2 }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            processRowUpdate={handleProcessRowUpdate}
-            experimentalFeatures={{ newEditingApi: true }}
-            disableRowSelectionOnClick
-            autoHeight
+        {/* Add Item Section */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, mt: 4 }}>
+          <TextField
+            select
+            label="Select Ingredient"
+            value={selectedIngredient}
+            onChange={(e) => setSelectedIngredient(e.target.value)}
+            variant="outlined"
+            style={{ flex: 1, marginRight: '8px' }}
+          >
+            {ingredients.map((ingredient) => (
+              <MenuItem key={ingredient.id} value={ingredient.name}>
+                {`${ingredient.name} (${ingredient.baseUnit})`}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Quantity"
+            type="number"
+            value={newQuantity}
+            onChange={(e) => setNewQuantity(Number(e.target.value))}
+            variant="outlined"
+            style={{ width: '100px', marginRight: '8px' }}
           />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
-              Submit To Pending Purchases
-            </Button>
+          <Button variant="contained" color="secondary" onClick={handleAddItem}>
+            Add Item
+          </Button>
+        </Box>
+
+        {/* Drag and Drop Section */}
+        <DndContext onDragEnd={handleDragEnd}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, mt: 4 }}>
+            <Box sx={{ textAlign: 'center', width: '50%' }}>
+              <Typography variant="h6" align="center" style={{ marginBottom: '8px' }}>
+                Base Shopping List
+              </Typography>
+              <DroppableContainer id="shoppingList" columns={columns}>
+                {rows.map((row) => (
+                  <DraggableRow key={row.id} row={row} />
+                ))}
+              </DroppableContainer>
+              <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
+                Submit To Pending Purchases
+              </Button>
+            </Box>
+
+            <Box sx={{ textAlign: 'center', width: '50%' }}>
+              <Typography variant="h6" align="center" style={{ marginBottom: '8px' }}>
+                Custom Shopping List
+              </Typography>
+              <DroppableContainer id="customList" columns={columns}>
+                {customList.map((item) => (
+                  <DraggableRow key={item.id} row={item} />
+                ))}
+              </DroppableContainer>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleSubmitCustomList}
+              >
+                Submit Custom List
+              </Button>
+            </Box>
           </Box>
-        </Paper>
+
+          {/* Trash Container */}
+          <TrashContainer />
+        </DndContext>
       </Box>
 
       {/* Dialog */}

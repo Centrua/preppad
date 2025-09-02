@@ -18,6 +18,7 @@ function ForgotPassword({ open, handleClose }) {
           component: 'form',
           onSubmit: (event) => {
             event.preventDefault();
+            event.stopPropagation();
             handleClose();
           },
           sx: { backgroundImage: 'none' },
@@ -31,6 +32,9 @@ function ForgotPassword({ open, handleClose }) {
         <DialogContentText>
           Enter your account&apos;s email address, and we&apos;ll send you a link to
           reset your password.
+        </DialogContentText>
+        <DialogContentText>
+          COMING SOON
         </DialogContentText>
         <OutlinedInput
           autoFocus

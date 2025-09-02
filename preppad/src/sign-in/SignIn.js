@@ -1,4 +1,3 @@
-import { Divider } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MuiCard from '@mui/material/Card';
@@ -7,13 +6,12 @@ import CssBaseline from '@mui/material/CssBaseline';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormLabel from '@mui/material/FormLabel';
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import * as React from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import AppTheme from '../shared-theme/AppTheme';
 import ForgotPassword from './components/ForgotPassword';
@@ -251,27 +249,6 @@ export default function SignIn(props) {
             >
               Sign in
             </Button>
-            <Divider>
-              <Typography sx={{ color: 'text.secondary' }}>or</Typography>
-            </Divider>
-            <Link
-              component="button"
-              type="button"
-              onClick={handleClickOpen}
-              variant="body2"
-              sx={{ alignSelf: 'center' }}
-            >
-              Forgot your password?
-            </Link>
-            <Link
-              component={RouterLink}
-              to="/sign-up"
-              underline="hover"
-              sx={{ alignSelf: 'center' }}
-              variant="body2"
-            >
-              {"Don't have an account? Sign up!"}
-            </Link>
           </Box>
         </Card>
         <ToastContainer />

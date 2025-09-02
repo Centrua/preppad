@@ -33,6 +33,7 @@ export default function PendingPurchasesPage() {
   const [totalPrice, setTotalPrice] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [formError, setFormError] = useState('');
+  const [purchaseLocation, setPurchaseLocation] = useState('');
   const printRef = useRef();
   const [printText, setPrintText] = useState('');
   const [showPrintDialog, setShowPrintDialog] = useState(false);
@@ -70,6 +71,7 @@ export default function PendingPurchasesPage() {
         ? String(purchase.totalPrice)
         : ''
     );
+    setPurchaseLocation('location'); // Default to 'location'
     setOpenDialog(true);
   };
 
@@ -78,6 +80,7 @@ export default function PendingPurchasesPage() {
     setSelectedPurchase(null);
     setQuantities([]);
     setTotalPrice('');
+    setPurchaseLocation('');
     setFormError('');
   };
 
@@ -97,10 +100,12 @@ export default function PendingPurchasesPage() {
   const handleConfirm = async () => {
     if (!selectedPurchase || !selectedPurchase.id) return;
     setFormError('');
-    if (!totalPrice || isNaN(Number(totalPrice)) || Number(totalPrice) < 0) {
-      setFormError('Total price is required and must be a positive number.');
+
+    if (!purchaseLocation) {
+      setFormError('Purchase location is required.');
       return;
     }
+
     try {
       const res = await fetch(
         `${API_BASE}/pending-purchase/${selectedPurchase.id}/complete`,
@@ -110,9 +115,13 @@ export default function PendingPurchasesPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ totalPrice: Number(totalPrice) }),
+          body: JSON.stringify({
+            totalPrice: totalPrice ? Number(totalPrice) : null, // Make totalPrice optional
+            purchaseLocation,
+          }),
         }
       );
+
       if (!res.ok) {
         const errData = await res.json();
         setFormError(`Failed to confirm purchase: ${errData.error || res.statusText}`);
@@ -198,36 +207,56 @@ export default function PendingPurchasesPage() {
   };
 
   const handleDeletePurchase = async () => {
-  if (!purchaseToDelete) return;
-  try {
-    const res = await fetch(
-      `${API_BASE}/pending-purchase/${purchaseToDelete}/update-pending-purchases`,
-      {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    let errMessage = `Failed to delete purchase ${purchaseToDelete}`;
+    if (!purchaseToDelete) return;
     try {
-      const errData = await res.json();
-      if (errData.error) errMessage = errData.error;
-    } catch (_) {}
+      // Add the pending purchase back to the shopping list
+      const addToShoppingListRes = await fetch(
+        `${API_BASE}/pending-purchase/add-to-shopping-list`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ pendingPurchaseId: purchaseToDelete }),
+        }
+      );
 
-    if (!res.ok) {
-      throw new Error(errMessage);
+      if (!addToShoppingListRes.ok) {
+        const errorData = await addToShoppingListRes.json();
+        throw new Error(
+          `Failed to add purchase ${purchaseToDelete} to shopping list: ${errorData.error || addToShoppingListRes.statusText}`
+        );
+      }
+
+      // Delete the pending purchase
+      const res = await fetch(
+        `${API_BASE}/pending-purchase/${purchaseToDelete}/update-pending-purchases`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      let errMessage = `Failed to delete purchase ${purchaseToDelete}`;
+      try {
+        const errData = await res.json();
+        if (errData.error) errMessage = errData.error;
+      } catch (_) {}
+
+      if (!res.ok) {
+        throw new Error(errMessage);
+      }
+
+      setAllPurchases((prev) => prev.filter((p) => p.id !== purchaseToDelete));
+      closeDeleteDialog();
+    } catch (err) {
+      console.error(err);
+      alert(`Error deleting purchase: ${err.message}`);
     }
+  };
 
-    setAllPurchases((prev) => prev.filter(p => p.id !== purchaseToDelete));
-    closeDeleteDialog();
-    // Removed alert for successful deletion
-  } catch (err) {
-    console.error(err);
-    alert(`Error deleting purchase: ${err.message}`);
-  }
-};
-
-// 
+  // 
   if (loading) {
     return (
       <Layout>
@@ -249,6 +278,26 @@ export default function PendingPurchasesPage() {
       </Layout>
     );
   }
+
+  const purchaseLocationOptions = [
+    { value: 'location', label: 'Location' },
+    { value: 'online', label: 'Online' },
+  ];
+
+  const renderDeleteButton = (purchase) => {
+    if (purchase.status === 'pending') {
+      return (
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => openDeleteDialog(purchase.id)}
+        >
+          Delete
+        </Button>
+      );
+    }
+    return null;
+  };
 
   return (
     <Layout>
@@ -275,7 +324,7 @@ export default function PendingPurchasesPage() {
           </Button>
         </Box>
 
-        <Paper>
+        <Paper elevation={3}>
           <Table aria-label="pending purchases table">
             <TableHead>
               <TableRow>
@@ -283,6 +332,7 @@ export default function PendingPurchasesPage() {
                 <TableCell>Purchase ID</TableCell>
                 <TableCell>Item Name</TableCell>
                 <TableCell>Quantity</TableCell>
+                <TableCell>Date</TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -303,6 +353,7 @@ export default function PendingPurchasesPage() {
                         ? purchase.quantities[0]
                         : ''}
                     </TableCell>
+                    <TableCell>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
                     <TableCell align="center">
                       <Button
                         variant="contained"
@@ -327,15 +378,7 @@ export default function PendingPurchasesPage() {
                       >
                         <PrintIcon fontSize="small" />
                       </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        sx={{ ml: 1 }}
-                        onClick={() => openDeleteDialog(purchase.id)}
-                        title="Delete purchase"
-                      >
-                        Delete
-                      </Button>
+                      {renderDeleteButton(purchase)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -414,6 +457,24 @@ export default function PendingPurchasesPage() {
                     disabled={selectedPurchase.status === 'completed'}
                   />
                 </Box>
+
+                <TextField
+                  select
+                  label="Purchase Location"
+                  value={purchaseLocation}
+                  onChange={(e) => setPurchaseLocation(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  SelectProps={{
+                    native: true,
+                  }}
+                >
+                  {purchaseLocationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </TextField>
               </>
             )}
           </DialogContent>

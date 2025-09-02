@@ -57,7 +57,6 @@ const SquareCallback = () => {
           return res.json();
         })
         .then((data) => {
-          console.log('Inventory sync success:', data);
           navigate('/square-oauth');
         })
         .catch((err) => {

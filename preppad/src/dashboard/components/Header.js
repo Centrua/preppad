@@ -33,9 +33,6 @@ export default function Header() {
     >
       <NavbarBreadcrumbs />
       <Stack direction="row" sx={{ gap: 1 }}>
-        <MenuButton showBadge aria-label="Open notifications" onClick={handleClick}>
-          <NotificationsRoundedIcon />
-        </MenuButton>
         <Menu
           anchorEl={anchorEl}
           open={open}

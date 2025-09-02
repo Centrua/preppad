@@ -1,6 +1,6 @@
 import * as React from 'react';
 import PropTypes from 'prop-types';
-import { CssVarsProvider, experimental_extendTheme as extendTheme } from '@mui/material/styles';
+import { CssVarsProvider, extendTheme } from '@mui/material/styles'; // Updated import
 
 import { inputsCustomizations } from './customizations/inputs';
 import { dataDisplayCustomizations } from './customizations/dataDisplay';
