@@ -128,6 +128,30 @@ export default function PendingPurchasesPage() {
         return;
       }
 
+      await fetch(
+        `${API_BASE}/pending-purchase/${selectedPurchase.id}/diff-to-shopping-list`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ confirmedQuantities: quantities }),
+        }
+      );
+
+      await fetch(
+        `${API_BASE}/pending-purchase/${selectedPurchase.id}/update-inventory`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ itemIds: selectedPurchase.itemIds, quantities }),
+        }
+      );
+
       await fetchPendingPurchases();
       handleCloseDialog();
     } catch (err) {
