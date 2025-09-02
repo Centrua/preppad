@@ -207,34 +207,54 @@ export default function PendingPurchasesPage() {
   };
 
   const handleDeletePurchase = async () => {
-  if (!purchaseToDelete) return;
-  try {
-    const res = await fetch(
-      `${API_BASE}/pending-purchase/${purchaseToDelete}/update-pending-purchases`,
-      {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    let errMessage = `Failed to delete purchase ${purchaseToDelete}`;
+    if (!purchaseToDelete) return;
     try {
-      const errData = await res.json();
-      if (errData.error) errMessage = errData.error;
-    } catch (_) {}
+      // Add the pending purchase back to the shopping list
+      const addToShoppingListRes = await fetch(
+        `${API_BASE}/pending-purchase/add-to-shopping-list`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ pendingPurchaseId: purchaseToDelete }),
+        }
+      );
 
-    if (!res.ok) {
-      throw new Error(errMessage);
+      if (!addToShoppingListRes.ok) {
+        const errorData = await addToShoppingListRes.json();
+        throw new Error(
+          `Failed to add purchase ${purchaseToDelete} to shopping list: ${errorData.error || addToShoppingListRes.statusText}`
+        );
+      }
+
+      // Delete the pending purchase
+      const res = await fetch(
+        `${API_BASE}/pending-purchase/${purchaseToDelete}/update-pending-purchases`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      let errMessage = `Failed to delete purchase ${purchaseToDelete}`;
+      try {
+        const errData = await res.json();
+        if (errData.error) errMessage = errData.error;
+      } catch (_) {}
+
+      if (!res.ok) {
+        throw new Error(errMessage);
+      }
+
+      setAllPurchases((prev) => prev.filter((p) => p.id !== purchaseToDelete));
+      closeDeleteDialog();
+    } catch (err) {
+      console.error(err);
+      alert(`Error deleting purchase: ${err.message}`);
     }
-
-    setAllPurchases((prev) => prev.filter(p => p.id !== purchaseToDelete));
-    closeDeleteDialog();
-    // Removed alert for successful deletion
-  } catch (err) {
-    console.error(err);
-    alert(`Error deleting purchase: ${err.message}`);
-  }
-};
+  };
 
 // 
   if (loading) {
