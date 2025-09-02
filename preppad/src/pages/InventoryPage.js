@@ -113,8 +113,6 @@ export default function InventoryPage() {
       ? `${API_BASE}/ingredients/${editingItem.id}`
       : `${API_BASE}/ingredients`;
 
-    console.log("token:", token);
-
     try {
       const res = await fetch(endpoint, {
         method,
@@ -151,8 +149,6 @@ export default function InventoryPage() {
           if (!updateListRes.ok) {
             const errorData = await updateListRes.json();
             console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
-          } else {
-            console.log('✅ Shopping list updated for item:', editingItem.id);
           }
         } catch (err) {
           console.error('❌ Error calling /shopping-list/:id:', err);

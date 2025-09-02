@@ -215,6 +215,28 @@ export default function ShoppingListPage() {
     setNewQuantity(1);
   };
 
+  const handleDeleteItem = async (itemId) => {
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_BASE}/shopping-list/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setRows((prev) => prev.filter((row) => row.id !== itemId));
+      } else {
+        console.error('Failed to delete item');
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
+  };
+
   const DraggableRow = ({ row }) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: row.id });
 
@@ -281,7 +303,34 @@ export default function ShoppingListPage() {
     } else if (over.id === 'shoppingList' && customList.some((item) => item.id === active.id)) {
       setRows((prev) => [...prev, draggedItem]);
       setCustomList((prev) => prev.filter((item) => item.id !== active.id));
+    } else if (over.id === 'trash') {
+      handleDeleteItem(active.id);
     }
+  };
+
+  const TrashContainer = () => {
+    const { setNodeRef, isOver } = useDroppable({ id: 'trash' });
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={{
+          width: '100px',
+          height: '100px',
+          backgroundColor: isOver ? '#ffcccc' : '#f8d7da',
+          borderRadius: '50%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '16px auto',
+          cursor: 'pointer',
+        }}
+      >
+        <Typography variant="body1" align="center" style={{ color: '#721c24' }}>
+          Trash
+        </Typography>
+      </div>
+    );
   };
 
   const handleSubmitCustomList = async () => {
@@ -402,6 +451,9 @@ export default function ShoppingListPage() {
               </Button>
             </Box>
           </Box>
+
+          {/* Trash Container */}
+          <TrashContainer />
         </DndContext>
       </Box>
 
