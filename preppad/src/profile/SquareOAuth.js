@@ -58,7 +58,7 @@ const SquareOAuth = () => {
   }, []);
 
   const connectToSquare = () => {
-    const authUrl = `https://${process.env.REACT_APP_SQUARE_URL}/oauth2/authorize?client_id=${squareAppId}&response_type=code&scope=${scopes}&redirect_uri=${redirectUri}`;
+    const authUrl = `${process.env.REACT_APP_SQUARE_URL}/oauth2/authorize?client_id=${squareAppId}&response_type=code&scope=${scopes}&redirect_uri=${redirectUri}`;
     window.location.href = authUrl;
   };
 
