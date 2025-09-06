@@ -440,12 +440,16 @@ export default function ShoppingListPage() {
 
       if (purchaseRes.ok) {
         // Delete items from the base shopping list
-        for (const itemId of itemIds) {
+        for (let i = 0; i < itemIds.length; i++) {
+          const itemId = itemIds[i];
+          const quantity = quantities[i];
           await fetch(`${API_BASE}/shopping-list/${itemId}`, {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ quantity }),
           });
         }
 
