@@ -70,8 +70,8 @@ export default function PendingPurchasesPage() {
       purchase.status === 'completed' && purchase.totalPrice != null
         ? String(purchase.totalPrice)
         : ''
-    );
-    setPurchaseLocation('location'); // Default to 'location'
+    ); 
+    setPurchaseLocation(purchase.purchaseLocation);
     setOpenDialog(true);
   };
 
@@ -279,11 +279,6 @@ export default function PendingPurchasesPage() {
     );
   }
 
-  const purchaseLocationOptions = [
-    { value: 'location', label: 'Location' },
-    { value: 'online', label: 'Online' },
-  ];
-
   const renderDeleteButton = (purchase) => {
     if (purchase.status === 'pending') {
       return (
@@ -459,21 +454,14 @@ export default function PendingPurchasesPage() {
                 </Box>
 
                 <TextField
-                  select
                   label="Purchase Location"
                   value={purchaseLocation}
                   onChange={(e) => setPurchaseLocation(e.target.value)}
                   fullWidth
                   margin="normal"
-                  SelectProps={{
-                    native: true,
-                  }}
+                  disabled={selectedPurchase.status === 'completed'}
                 >
-                  {purchaseLocationOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+      
                 </TextField>
               </>
             )}
