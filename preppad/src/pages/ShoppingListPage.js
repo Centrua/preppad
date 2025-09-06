@@ -501,7 +501,7 @@ export default function ShoppingListPage() {
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, mt: 4 }}>
             <Box sx={{ textAlign: 'center', width: '50%' }}>
               <Typography variant="h6" align="center" style={{ marginBottom: '8px' }}>
-                Base Shopping List
+                Low Inventory
               </Typography>
               <DroppableContainer id="shoppingList" columns={columns}>
                 {rows.map((row) => (
@@ -515,7 +515,7 @@ export default function ShoppingListPage() {
 
             <Box sx={{ textAlign: 'center', width: '50%' }}>
               <Typography variant="h6" align="center" style={{ marginBottom: '8px' }}>
-                Custom Shopping List
+                Shopping List
               </Typography>
               <DroppableContainer id="customList" columns={columns}>
                 {customList.map((item) => (
