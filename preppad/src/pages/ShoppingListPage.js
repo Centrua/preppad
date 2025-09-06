@@ -43,11 +43,15 @@ export default function ShoppingListPage() {
   const [rows, setRows] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
-  const [newItem, setNewItem] = useState('');
   const [newQuantity, setNewQuantity] = useState(1);
   const [ingredients, setIngredients] = useState([]);
   const [selectedIngredient, setSelectedIngredient] = useState([]);
   const [customList, setCustomList] = useState([]);
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false);
+  const [quantityToMove, setQuantityToMove] = useState(0);
+  const [maxQuantity, setMaxQuantity] = useState(0);
+  const [onQuantityConfirm, setOnQuantityConfirm] = useState(null);
+  const [invalidQuantityDialogOpen, setInvalidQuantityDialogOpen] = useState(false);
 
   const openDialog = (message) => {
     setDialogMessage(message);
@@ -56,6 +60,37 @@ export default function ShoppingListPage() {
 
   const closeDialog = () => {
     setDialogOpen(false);
+  };
+
+  const openQuantityDialog = (maxQuantity, callback) => {
+    setMaxQuantity(maxQuantity);
+    setQuantityToMove(maxQuantity);
+    setOnQuantityConfirm(() => callback);
+    setQuantityDialogOpen(true);
+  };
+
+  const closeQuantityDialog = () => {
+    setQuantityDialogOpen(false);
+    setQuantityToMove(0);
+    setMaxQuantity(0);
+    setOnQuantityConfirm(null);
+  };
+
+  const openInvalidQuantityDialog = () => {
+    setInvalidQuantityDialogOpen(true);
+  };
+
+  const closeInvalidQuantityDialog = () => {
+    setInvalidQuantityDialogOpen(false);
+  };
+
+  const handleQuantityConfirm = () => {
+    if (quantityToMove > 0 && quantityToMove <= maxQuantity) {
+      onQuantityConfirm(quantityToMove);
+      closeQuantityDialog();
+    } else {
+      openInvalidQuantityDialog();
+    }
   };
 
   useEffect(() => {
@@ -299,11 +334,53 @@ export default function ShoppingListPage() {
     const draggedItem = rows.find((row) => row.id === active.id) || customList.find((item) => item.id === active.id);
 
     if (over.id === 'customList' && rows.some((row) => row.id === active.id)) {
-      setCustomList((prev) => [...prev, draggedItem]);
-      setRows((prev) => prev.filter((row) => row.id !== active.id));
+      const existingItem = customList.find((item) => item.id === active.id);
+      const maxQuantity = draggedItem.quantity;
+
+      openQuantityDialog(maxQuantity, (quantity) => {
+        setCustomList((prev) => {
+          if (existingItem) {
+            return prev.map((item) =>
+              item.id === active.id
+                ? { ...item, quantity: item.quantity + quantity }
+                : item
+            );
+          } else {
+            return [...prev, { ...draggedItem, quantity }];
+          }
+        });
+        setRows((prev) =>
+          prev.map((row) =>
+            row.id === active.id
+              ? { ...row, quantity: row.quantity - quantity }
+              : row
+          ).filter((row) => row.quantity > 0)
+        );
+      });
     } else if (over.id === 'shoppingList' && customList.some((item) => item.id === active.id)) {
-      setRows((prev) => [...prev, draggedItem]);
-      setCustomList((prev) => prev.filter((item) => item.id !== active.id));
+      const existingItem = rows.find((row) => row.id === active.id);
+      const maxQuantity = draggedItem.quantity;
+
+      openQuantityDialog(maxQuantity, (quantity) => {
+        setRows((prev) => {
+          if (existingItem) {
+            return prev.map((row) =>
+              row.id === active.id
+                ? { ...row, quantity: row.quantity + quantity }
+                : row
+            );
+          } else {
+            return [...prev, { ...draggedItem, quantity }];
+          }
+        });
+        setCustomList((prev) =>
+          prev.map((item) =>
+            item.id === active.id
+              ? { ...item, quantity: item.quantity - quantity }
+              : item
+          ).filter((item) => item.quantity > 0)
+        );
+      });
     } else if (over.id === 'trash') {
       handleDeleteItem(active.id);
     }
@@ -464,6 +541,41 @@ export default function ShoppingListPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Quantity Dialog */}
+      <Dialog open={quantityDialogOpen} onClose={closeQuantityDialog}>
+        <DialogTitle>Choose Quantity To Move</DialogTitle>
+        <DialogContent>
+          <TextField
+            type="number"
+            value={quantityToMove}
+            onChange={(e) => setQuantityToMove(Number(e.target.value))}
+            inputProps={{ min: 1, max: maxQuantity }}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeQuantityDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleQuantityConfirm} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Invalid Quantity Dialog */}
+      <Dialog open={invalidQuantityDialogOpen} onClose={closeInvalidQuantityDialog}>
+        <DialogTitle>Invalid Quantity</DialogTitle>
+        <DialogContent>
+          <Typography>Please enter a valid quantity within the allowed range.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeInvalidQuantityDialog} color="primary">
             OK
           </Button>
         </DialogActions>
