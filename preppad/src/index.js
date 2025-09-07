@@ -5,10 +5,9 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 
 // Auth & Protected components
+import ProtectedRoute from './components/ProtectedRoute';
 import SignIn from './sign-in/SignIn';
 import SignUp from './sign-up/SignUp';
-import AddItem from './add-item/AddItem';
-import ProtectedRoute from './components/ProtectedRoute';
 
 // Layout & OAuth
 import Dashboard from './dashboard/Dashboard';
@@ -16,19 +15,19 @@ import SquareCallback from './profile/SquareCallback';
 import SquareOAuth from './profile/SquareOAuth';
 
 // Pages for each menu route
+import IntegrationsPage from './pages/IntegrationsPage';
 import InventoryPage from './pages/InventoryPage';
-import ShoppingListPage from './pages/ShoppingListPage';
 import PendingPurchasesPage from './pages/PendingPurchasesPage';
 import RecipesPage from './pages/RecipesPage';
 import ReportsPage from './pages/ReportsPage';
-import IntegrationsPage from './pages/IntegrationsPage';
+import ShoppingListPage from './pages/ShoppingListPage';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <BrowserRouter>
     <Routes>
-      {/* Root route now loads protected Dashboard */}
+      {/* Root route loads protected Dashboard */}
       <Route
         path="/"
         element={
@@ -41,7 +40,6 @@ root.render(
       {/* Public Routes */}
       <Route path="/sign-in" element={<SignIn />} />
       <Route path="/sign-up" element={<SignUp />} />
-      <Route path="/add-item" element={<AddItem />} />
 
       {/* Protected Routes */}
       <Route
