@@ -40,6 +40,7 @@ export default function PendingPurchasesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -415,6 +416,14 @@ export default function PendingPurchasesPage() {
                 >
                   All Items
                 </Typography>
+                <TextField
+                  label="Search Items"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  placeholder="Search by item name"
+                />
                 <TableContainer component={Paper}>
                   <Table
                     size="small"
@@ -428,22 +437,26 @@ export default function PendingPurchasesPage() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {selectedPurchase.itemNames.map((itemName, idx) => (
-                        <TableRow key={`${selectedPurchase.id}-${idx}`}>
-                          <TableCell align="left" sx={{ px: 2 }}>{itemName}</TableCell>
-                          <TableCell align="center" sx={{ px: 2 }}>
-                            <TextField
-                              type="number"
-                              size="small"
-                              value={quantities[idx]}
-                              onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                              inputProps={{ min: 0, style: { textAlign: 'center' }, readOnly: selectedPurchase.status === 'completed' }}
-                              sx={{ width: 80, mx: 'auto', display: 'block' }}
-                              disabled={selectedPurchase.status === 'completed'}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {selectedPurchase.itemNames
+                        .filter((itemName) =>
+                          itemName.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((itemName, idx) => (
+                          <TableRow key={`${selectedPurchase.id}-${idx}`}>
+                            <TableCell align="left" sx={{ px: 2 }}>{itemName}</TableCell>
+                            <TableCell align="center" sx={{ px: 2 }}>
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={quantities[idx]}
+                                onChange={(e) => handleQuantityChange(idx, e.target.value)}
+                                inputProps={{ min: 0, style: { textAlign: 'center' }, readOnly: selectedPurchase.status === 'completed' }}
+                                sx={{ width: 80, mx: 'auto', display: 'block' }}
+                                disabled={selectedPurchase.status === 'completed'}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </TableContainer>
