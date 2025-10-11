@@ -339,6 +339,7 @@ export default function PendingPurchasesPage() {
                 <TableCell>Purchase ID</TableCell>
                 <TableCell>Item Name</TableCell>
                 <TableCell>Quantity</TableCell>
+                <TableCell>Location</TableCell>
                 <TableCell onClick={handleSortToggle} style={{ cursor: 'pointer', fontWeight: 'bold' }}>
                   Date {sortOrder === 'desc' ? '↓' : '↑'}
                 </TableCell>
@@ -360,6 +361,7 @@ export default function PendingPurchasesPage() {
                       ? purchase.quantities[0]
                       : ''}
                   </TableCell>
+                  <TableCell>{purchase.purchaseLocation || 'N/A'}</TableCell>
                   <TableCell>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
                   <TableCell align="center">
                     <Button
