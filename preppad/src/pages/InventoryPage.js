@@ -20,6 +20,7 @@ import {
   Select,
   MenuItem,
   InputLabel,
+  Divider,
 } from '@mui/material';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
@@ -55,6 +56,7 @@ export default function InventoryPage() {
   const [ingredientInUseOpen, setIngredientInUseOpen] = useState(false);
   const [formError, setFormError] = useState('');
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -258,6 +260,10 @@ export default function InventoryPage() {
     });
   };
 
+  const filteredItems = items.filter((item) =>
+    item.itemName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
@@ -362,6 +368,15 @@ export default function InventoryPage() {
         <Typography variant="h6" gutterBottom>
           Inventory List
         </Typography>
+        <TextField
+          label="Search Inventory"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          fullWidth
+          margin="normal"
+          placeholder="Search by item name"
+          sx={{ mb: 4 }}
+        />
         <Paper elevation={3}>
           <Table>
             <TableHead>
@@ -376,7 +391,7 @@ export default function InventoryPage() {
               </TableRow>
             </TableHead>
             <TableBody> 
-              {Array.isArray(items) && items.map(item => (
+              {filteredItems.map(item => (
                 <TableRow key={item.id}>
                   <TableCell>{item.itemName}</TableCell>
                   <TableCell>{(item.allowedUnits || []).join(', ')}</TableCell>
