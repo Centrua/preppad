@@ -37,10 +37,9 @@ export default function PendingPurchasesPage() {
   const printRef = useRef();
   const [printText, setPrintText] = useState('');
   const [showPrintDialog, setShowPrintDialog] = useState(false);
-
-  // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState(null);
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const token = localStorage.getItem('token');
 
@@ -256,6 +255,18 @@ export default function PendingPurchasesPage() {
     }
   };
 
+  const sortedPurchases = allPurchases
+    .filter((purchase) => purchase.status === statusFilter)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
+  const handleSortToggle = () => {
+    setSortOrder((prevOrder) => (prevOrder === 'desc' ? 'asc' : 'desc'));
+  };
+
   // 
   if (loading) {
     return (
@@ -327,56 +338,56 @@ export default function PendingPurchasesPage() {
                 <TableCell>Purchase ID</TableCell>
                 <TableCell>Item Name</TableCell>
                 <TableCell>Quantity</TableCell>
-                <TableCell>Date</TableCell>
+                <TableCell onClick={handleSortToggle} style={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                  Date {sortOrder === 'desc' ? '↓' : '↑'}
+                </TableCell>
                 <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {allPurchases
-                .filter((purchase) => purchase.status === statusFilter)
-                .map((purchase) => (
-                  <TableRow key={purchase.id} hover>
-                    <TableCell />
-                    <TableCell>{purchase.id}</TableCell>
-                    <TableCell>
-                      {purchase.itemNames && purchase.itemNames.length > 0
-                        ? purchase.itemNames[0]
-                        : ''}
-                    </TableCell>
-                    <TableCell>
-                      {purchase.quantities && purchase.quantities.length > 0
-                        ? purchase.quantities[0]
-                        : ''}
-                    </TableCell>
-                    <TableCell>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
-                    <TableCell align="center">
-                      <Button
-                        variant="contained"
-                        color={purchase.status === 'completed' ? 'info' : 'primary'}
-                        onClick={() => handleOpenDialog(purchase)}
-                      >
-                        {purchase.status === 'completed' ? 'View' : 'Confirm'}
-                      </Button>
-                      <Button
-                        size="small"
-                        sx={{ ml: 1 }}
-                        onClick={() => handleCopy(purchase)}
-                        title="Copy text"
-                      >
-                        <ContentCopyIcon fontSize="small" />
-                      </Button>
-                      <Button
-                        size="small"
-                        sx={{ ml: 1 }}
-                        onClick={() => handlePrint(purchase)}
-                        title="Print"
-                      >
-                        <PrintIcon fontSize="small" />
-                      </Button>
-                      {renderDeleteButton(purchase)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {sortedPurchases.map((purchase) => (
+                <TableRow key={purchase.id} hover>
+                  <TableCell />
+                  <TableCell>{purchase.id}</TableCell>
+                  <TableCell>
+                    {purchase.itemNames && purchase.itemNames.length > 0
+                      ? purchase.itemNames[0]
+                      : ''}
+                  </TableCell>
+                  <TableCell>
+                    {purchase.quantities && purchase.quantities.length > 0
+                      ? purchase.quantities[0]
+                      : ''}
+                  </TableCell>
+                  <TableCell>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="contained"
+                      color={purchase.status === 'completed' ? 'info' : 'primary'}
+                      onClick={() => handleOpenDialog(purchase)}
+                    >
+                      {purchase.status === 'completed' ? 'View' : 'Confirm'}
+                    </Button>
+                    <Button
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => handleCopy(purchase)}
+                      title="Copy text"
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </Button>
+                    <Button
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => handlePrint(purchase)}
+                      title="Print"
+                    >
+                      <PrintIcon fontSize="small" />
+                    </Button>
+                    {renderDeleteButton(purchase)}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </Paper>
