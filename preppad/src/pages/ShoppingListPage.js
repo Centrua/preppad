@@ -14,6 +14,7 @@ import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditNoteIcon from '@mui/icons-material/EditNote';  
 
 const columns = [
   {
@@ -55,6 +56,9 @@ export default function ShoppingListPage() {
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [purchaseLocation, setPurchaseLocation] = useState('');
   const [onLocationConfirm, setOnLocationConfirm] = useState(null);
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [ingredientNote, setIngredientNote] = useState('');
+  const [onNoteConfirm, setOnNoteConfirm] = useState(null);
 
   const openDialog = (message) => {
     setDialogMessage(message);
@@ -98,6 +102,17 @@ export default function ShoppingListPage() {
     setOnLocationConfirm(null);
   };
 
+  const openNoteDialog = (callback) => {
+    setOnNoteConfirm(() => callback);
+    setNoteDialogOpen(true);
+  };
+
+  const closeNoteDialog = () => {
+    setNoteDialogOpen(false);
+    setIngredientNote('');
+    setOnNoteConfirm(null);
+  };
+
   const handleQuantityConfirm = () => {
     if (quantityToMove > 0 && quantityToMove <= maxQuantity) {
       onQuantityConfirm(quantityToMove);
@@ -112,6 +127,13 @@ export default function ShoppingListPage() {
       onLocationConfirm(purchaseLocation);
     }
     closeLocationDialog();
+  };
+
+  const handleNoteConfirm = () => {
+    if (onNoteConfirm) {
+      onNoteConfirm(ingredientNote);
+    }
+    closeNoteDialog();
   };
 
   useEffect(() => {
@@ -246,33 +268,36 @@ export default function ShoppingListPage() {
   const handleAddItem = () => {
     if (!selectedIngredient) return;
 
-    const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
-    if (!ingredient) return;
+    openNoteDialog((note) => {
+      const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
+      if (!ingredient) return;
 
-    setRows((prev) => {
-      const existingRow = prev.find((row) => row.id === ingredient.id);
-      if (existingRow) {
-        // Update the quantity of the existing row
-        return prev.map((row) =>
-          row.id === ingredient.id
-            ? { ...row, quantity: row.quantity + newQuantity }
-            : row
-        );
-      } else {
-        // Add a new row
-        return [
-          ...prev,
-          {
-            id: ingredient.id, // Use the ingredient's ID
-            item: ingredient.name, // Use the ingredient's name for display
-            quantity: newQuantity,
-          },
-        ];
-      }
+      setRows((prev) => {
+        const existingRow = prev.find((row) => row.id === ingredient.id);
+        if (existingRow) {
+          // Update the quantity of the existing row
+          return prev.map((row) =>
+            row.id === ingredient.id
+              ? { ...row, quantity: row.quantity + newQuantity, note }
+              : row
+          );
+        } else {
+          // Add a new row
+          return [
+            ...prev,
+            {
+              id: ingredient.id, // Use the ingredient's ID
+              item: ingredient.name, // Use the ingredient's name for display
+              quantity: newQuantity,
+              note,
+            },
+          ];
+        }
+      });
+
+      setSelectedIngredient('');
+      setNewQuantity(1);
     });
-
-    setSelectedIngredient('');
-    setNewQuantity(1);
   };
 
   const handleDeleteItem = async (itemId) => {
@@ -297,14 +322,44 @@ export default function ShoppingListPage() {
     }
   };
 
+  const CustomTooltip = ({ note }) => (
+    <div
+      style={{
+        position: 'absolute',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        color: 'white',
+        padding: '8px',
+        borderRadius: '4px',
+        fontSize: '12px',
+        zIndex: 1000,
+        pointerEvents: 'none',
+      }}
+    >
+      {note}
+    </div>
+  );
+
   const DraggableRow = ({ row }) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: row.id });
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+    const handleMouseEnter = (e) => {
+      setTooltipPosition({ x: e.clientX, y: e.clientY });
+      setShowTooltip(true);
+    };
+
+    const handleMouseLeave = () => {
+      setShowTooltip(false);
+    };
 
     return (
       <div
         ref={setNodeRef}
         {...listeners}
         {...attributes}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -315,9 +370,21 @@ export default function ShoppingListPage() {
           opacity: isDragging ? 0.8 : 1,
           transform: isDragging ? 'scale(1.05)' : 'none',
           transition: 'transform 0.2s, background-color 0.2s, opacity 0.2s',
+          position: 'relative',
         }}
       >
-        <span style={{ flex: 1, textAlign: 'center' }}>{row.item}</span>
+        {showTooltip && row.note && (
+          <CustomTooltip
+            note={row.note}
+            style={{ top: tooltipPosition.y + 10, left: tooltipPosition.x + 10 }}
+          />
+        )}
+        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {row.item}
+          {row.note && (
+            <EditNoteIcon style={{ color: 'red', marginLeft: '8px' }} titleAccess="This item has a note" />
+          )}
+        </span>
         <span style={{ flex: 1, textAlign: 'center' }}>{row.quantity}</span>
       </div>
     );
@@ -508,6 +575,7 @@ export default function ShoppingListPage() {
                 {`${ingredient.name} (${ingredient.baseUnit})`}
               </MenuItem>
             ))}
+            <MenuItem value="Other">Other</MenuItem>
           </TextField>
           <TextField
             label="Quantity"
@@ -628,6 +696,28 @@ export default function ShoppingListPage() {
             Cancel
           </Button>
           <Button onClick={handleLocationConfirm} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Note Dialog */}
+      <Dialog open={noteDialogOpen} onClose={closeNoteDialog}>
+        <DialogTitle>Add Note to Ingredient</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Note"
+            value={ingredientNote}
+            onChange={(e) => setIngredientNote(e.target.value)}
+            fullWidth
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeNoteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleNoteConfirm} color="primary">
             Confirm
           </Button>
         </DialogActions>
