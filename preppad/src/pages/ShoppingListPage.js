@@ -52,6 +52,9 @@ export default function ShoppingListPage() {
   const [maxQuantity, setMaxQuantity] = useState(0);
   const [onQuantityConfirm, setOnQuantityConfirm] = useState(null);
   const [invalidQuantityDialogOpen, setInvalidQuantityDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [purchaseLocation, setPurchaseLocation] = useState('');
+  const [onLocationConfirm, setOnLocationConfirm] = useState(null);
 
   const openDialog = (message) => {
     setDialogMessage(message);
@@ -84,6 +87,17 @@ export default function ShoppingListPage() {
     setInvalidQuantityDialogOpen(false);
   };
 
+  const openLocationDialog = (callback) => {
+    setOnLocationConfirm(() => callback);
+    setLocationDialogOpen(true);
+  };
+
+  const closeLocationDialog = () => {
+    setLocationDialogOpen(false);
+    setPurchaseLocation('');
+    setOnLocationConfirm(null);
+  };
+
   const handleQuantityConfirm = () => {
     if (quantityToMove > 0 && quantityToMove <= maxQuantity) {
       onQuantityConfirm(quantityToMove);
@@ -91,6 +105,13 @@ export default function ShoppingListPage() {
     } else {
       openInvalidQuantityDialog();
     }
+  };
+
+  const handleLocationConfirm = () => {
+    if (onLocationConfirm) {
+      onLocationConfirm(purchaseLocation);
+    }
+    closeLocationDialog();
   };
 
   useEffect(() => {
@@ -168,55 +189,58 @@ export default function ShoppingListPage() {
   }, []);
 
   const handleSubmitPurchase = async () => {
-    try {
-      if (rows.length === 0) {
-        openDialog('No items to submit');
-        return;
-      }
+    if (rows.length === 0) {
+      openDialog('No items to submit');
+      return;
+    }
 
-      const itemIds = rows.map((row) => row.id);
-      const quantities = rows.map((row) => row.quantity);
+    openLocationDialog(async (purchaseLocation) => {
+      try {
+        const itemIds = rows.map((row) => row.id);
+        const quantities = rows.map((row) => row.quantity);
 
-      const payload = {
-        itemIds,
-        quantities,
-      };
+        const payload = {
+          itemIds,
+          quantities,
+          purchaseLocation,
+        };
 
-      const API_BASE = process.env.REACT_APP_API_BASE_URL;
-      const token = localStorage.getItem('token');
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+        const token = localStorage.getItem('token');
 
-      const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await purchaseRes.json();
-
-      if (purchaseRes.ok) {
-        const clearRes = await fetch(`${API_BASE}/shopping-list/clear`, {
-          method: 'PUT',
+        const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify(payload),
         });
 
-        if (!clearRes.ok) {
-          console.warn('Shopping list was submitted but not cleared.');
-        }
+        const result = await purchaseRes.json();
 
-        openDialog('Purchase submitted successfully!');
-        setRows([]);
-      } else {
-        openDialog('Error: ' + (result.error || 'Unknown error'));
+        if (purchaseRes.ok) {
+          const clearRes = await fetch(`${API_BASE}/shopping-list/clear`, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!clearRes.ok) {
+            console.warn('Shopping list was submitted but not cleared.');
+          }
+
+          openDialog('Purchase submitted successfully!');
+          setRows([]);
+        } else {
+          openDialog('Error: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error submitting purchase:', error);
+        openDialog('Failed to submit purchase');
       }
-    } catch (error) {
-      console.error('Error submitting purchase:', error);
-      openDialog('Failed to submit purchase');
-    }
+    });
   };
 
   const handleAddItem = () => {
@@ -410,58 +434,60 @@ export default function ShoppingListPage() {
   };
 
   const handleSubmitCustomList = async () => {
-    try {
-      if (customList.length === 0) {
-        openDialog('No items in the custom list to submit');
-        return;
-      }
-
-      const API_BASE = process.env.REACT_APP_API_BASE_URL;
-      const token = localStorage.getItem('token');
-
-      const itemIds = customList.map((item) => item.id);
-      const quantities = customList.map((item) => item.quantity);
-
-      const payload = {
-        itemIds,
-        quantities,
-      };
-
-      const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await purchaseRes.json();
-
-      if (purchaseRes.ok) {
-        // Delete items from the base shopping list
-        for (let i = 0; i < itemIds.length; i++) {
-          const itemId = itemIds[i];
-          const quantity = quantities[i];
-          await fetch(`${API_BASE}/shopping-list/${itemId}`, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ quantity }),
-          });
-        }
-
-        openDialog('Custom list submitted to pending purchases!');
-        setCustomList([]);
-      } else {
-        openDialog('Error: ' + (result.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error submitting custom list:', error);
-      openDialog('Failed to submit custom list');
+    if (customList.length === 0) {
+      openDialog('No items in the custom list to submit');
+      return;
     }
+
+    openLocationDialog(async (purchaseLocation) => {
+      try {
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+        const token = localStorage.getItem('token');
+
+        const itemIds = customList.map((item) => item.id);
+        const quantities = customList.map((item) => item.quantity);
+
+        const payload = {
+          itemIds,
+          quantities,
+          purchaseLocation,
+        };
+
+        const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await purchaseRes.json();
+
+        if (purchaseRes.ok) {
+          for (let i = 0; i < itemIds.length; i++) {
+            const itemId = itemIds[i];
+            const quantity = quantities[i];
+            await fetch(`${API_BASE}/shopping-list/${itemId}`, {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ quantity }),
+            });
+          }
+
+          openDialog('Custom list submitted to pending purchases!');
+          setCustomList([]);
+        } else {
+          openDialog('Error: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error submitting custom list:', error);
+        openDialog('Failed to submit custom list');
+      }
+    });
   };
 
   return (
@@ -581,6 +607,28 @@ export default function ShoppingListPage() {
         <DialogActions>
           <Button onClick={closeInvalidQuantityDialog} color="primary">
             OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Location Dialog */}
+      <Dialog open={locationDialogOpen} onClose={closeLocationDialog}>
+        <DialogTitle>Enter Location</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Location"
+            value={purchaseLocation}
+            onChange={(e) => setPurchaseLocation(e.target.value)}
+            fullWidth
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLocationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleLocationConfirm} color="primary">
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>
