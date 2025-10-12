@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   MenuItem,
+  Paper,
   TextField,
   Typography
 } from '@mui/material';
@@ -629,9 +630,18 @@ export default function ShoppingListPage() {
 
         {/* Drag and Drop Section */}
         <DndContext onDragEnd={handleDragEnd}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, mt: 4 }}>
-            <Box sx={{ textAlign: 'center', width: '50%' }}>
-              <Typography variant="h6" align="center" style={{ marginBottom: '8px' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+            {/* Low Inventory Box */}
+            <Paper
+              elevation={3}
+              sx={{
+                borderRadius: 2,
+                p: 3,
+                boxShadow: 3,
+                flex: 1,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
                 Low Inventory
               </Typography>
               <DroppableContainer id="shoppingList" columns={columns}>
@@ -642,10 +652,19 @@ export default function ShoppingListPage() {
               <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
                 Submit To Pending Purchases
               </Button>
-            </Box>
+            </Paper>
 
-            <Box sx={{ textAlign: 'center', width: '50%' }}>
-              <Typography variant="h6" align="center" style={{ marginBottom: '8px' }}>
+            {/* Shopping List Box */}
+            <Paper
+              elevation={3}
+              sx={{
+                borderRadius: 2,
+                p: 3,
+                boxShadow: 3,
+                flex: 1,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
                 Shopping List
               </Typography>
               <DroppableContainer id="customList" columns={columns}>
@@ -660,7 +679,7 @@ export default function ShoppingListPage() {
               >
                 Submit Custom List
               </Button>
-            </Box>
+            </Paper>
           </Box>
 
           {/* Trash Container */}
