@@ -300,10 +300,10 @@ export default function ShoppingListPage() {
         setRows((prev) => {
           const existingRow = prev.find((row) => row.id === ingredient.id);
           if (existingRow) {
-            // Update the quantity of the existing row
+            // Update the quantity of the existing row but keep the existing note
             return prev.map((row) =>
               row.id === ingredient.id
-                ? { ...row, quantity: row.quantity + newQuantity, note }
+                ? { ...row, quantity: row.quantity + newQuantity }
                 : row
             );
           } else {
@@ -314,7 +314,7 @@ export default function ShoppingListPage() {
                 id: ingredient.id, // Use the ingredient's ID
                 item: ingredient.name, // Use the ingredient's name for display
                 quantity: newQuantity,
-                note,
+                note, // Add the new note
               },
             ];
           }
