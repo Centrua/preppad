@@ -151,13 +151,14 @@ export default function ShoppingListPage() {
 
         const data = await response.json();
         if (response.ok && data) {
-          const { itemIds, itemNames, quantities } = data;
+          const { itemIds, itemNames, quantities, notes } = data;
 
-          // Build rows from itemIds, itemNames, and quantities
+          // Build rows from itemIds, itemNames, quantities, and notes
           const newRows = (itemIds || []).map((itemId, index) => ({
             id: itemId,
             item: (itemNames && itemNames[index]) || 'Unnamed Item',
             quantity: (quantities && quantities[index]) || 0,
+            note: (notes && notes[index]) || '',
           }));
           setRows(newRows);
         } else {
@@ -268,35 +269,62 @@ export default function ShoppingListPage() {
   const handleAddItem = () => {
     if (!selectedIngredient) return;
 
-    openNoteDialog((note) => {
+    openNoteDialog(async (note) => {
       const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
       if (!ingredient) return;
 
-      setRows((prev) => {
-        const existingRow = prev.find((row) => row.id === ingredient.id);
-        if (existingRow) {
-          // Update the quantity of the existing row
-          return prev.map((row) =>
-            row.id === ingredient.id
-              ? { ...row, quantity: row.quantity + newQuantity, note }
-              : row
-          );
-        } else {
-          // Add a new row
-          return [
-            ...prev,
-            {
-              id: ingredient.id, // Use the ingredient's ID
-              item: ingredient.name, // Use the ingredient's name for display
-              quantity: newQuantity,
-              note,
-            },
-          ];
-        }
-      });
+      try {
+        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+        const token = localStorage.getItem('token');
 
-      setSelectedIngredient('');
-      setNewQuantity(1);
+        const payload = {
+          quantity: newQuantity,
+          note,
+        };
+
+        const response = await fetch(`${API_BASE}/shopping-list/${ingredient.id}/shopping-list`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Failed to add item to shopping list:', errorData.error || response.statusText);
+          return;
+        }
+
+        setRows((prev) => {
+          const existingRow = prev.find((row) => row.id === ingredient.id);
+          if (existingRow) {
+            // Update the quantity of the existing row
+            return prev.map((row) =>
+              row.id === ingredient.id
+                ? { ...row, quantity: row.quantity + newQuantity, note }
+                : row
+            );
+          } else {
+            // Add a new row
+            return [
+              ...prev,
+              {
+                id: ingredient.id, // Use the ingredient's ID
+                item: ingredient.name, // Use the ingredient's name for display
+                quantity: newQuantity,
+                note,
+              },
+            ];
+          }
+        });
+
+        setSelectedIngredient('');
+        setNewQuantity(1);
+      } catch (error) {
+        console.error('Error adding item to shopping list:', error);
+      }
     });
   };
 
@@ -305,11 +333,20 @@ export default function ShoppingListPage() {
       const API_BASE = process.env.REACT_APP_API_BASE_URL;
       const token = localStorage.getItem('token');
 
+      // Find the current quantity for the item
+      const currentRow = rows.find((row) => row.id === itemId);
+      if (!currentRow) {
+        console.error('Item not found in the shopping list');
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/shopping-list/${itemId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ quantity: currentRow.quantity }), // Include current quantity in the request body
       });
 
       if (response.ok) {
