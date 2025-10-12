@@ -453,7 +453,7 @@ export default function PendingPurchasesPage() {
                         .map((itemName, idx) => (
                           <TableRow key={`${selectedPurchase.id}-${idx}`}>
                             <TableCell align="left" sx={{ px: 2 }}>{itemName}</TableCell>
-                            <TableCell align="center" sx={{ px: 2 }}>
+                            <TableCell align="center" sx={{ px: 2, wordWrap: 'break-word', whiteSpace: 'normal' }}>
                               {selectedPurchase.notes && selectedPurchase.notes[idx]
                                 ? selectedPurchase.notes[idx]
                                 : 'No note'}
