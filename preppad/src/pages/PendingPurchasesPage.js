@@ -490,8 +490,6 @@ export default function PendingPurchasesPage() {
                   </Table>
                 </TableContainer>
 
-      
-
                 <TextField
                   label="Purchase Location"
                   value={purchaseLocation}
@@ -500,11 +498,10 @@ export default function PendingPurchasesPage() {
                   margin="normal"
                   disabled={selectedPurchase.status === 'completed'}
                 >
-      
                 </TextField>
 
 
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left', gap: 1, marginTop: 3, marginLeft: -2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left', gap: 1, marginTop: 3, marginLeft: 1}}>
                   <Typography variant="subtitle1" sx={{ minWidth: 130, textAlign: 'left' }}>
                     Total Price ($):
                   </Typography>
@@ -515,7 +512,7 @@ export default function PendingPurchasesPage() {
                     onChange={handleTotalPriceChange}
                     placeholder="Enter total price"
                     inputProps={{ min: 0, step: '0.01', style: { textAlign: 'center' }, readOnly: selectedPurchase.status === 'completed' }}
-                    sx={{ width: 140 }}
+                    sx={{ width: 150 }}
                     disabled={selectedPurchase.status === 'completed'}
                   />
                 </Box>
