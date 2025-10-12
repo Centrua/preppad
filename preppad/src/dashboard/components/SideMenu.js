@@ -31,7 +31,12 @@ export default function SideMenu() {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setUser(decoded);
+        if (decoded.fullName) {
+          const firstName = decoded.fullName.split(' ')[0];
+          setUser({ ...decoded, firstName });
+        } else {
+          setUser(decoded);
+        }
       } catch (err) {
         console.error('Invalid token:', err);
       }
@@ -78,16 +83,13 @@ export default function SideMenu() {
       >
         <Avatar
           sizes="small"
-          alt={user?.email || 'User'}
+          alt={user?.firstName || 'User'}
           src="/static/images/avatar/7.jpg"
           sx={{ width: 36, height: 36 }}
         />
         <Box sx={{ mr: 'auto' }}>
           <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: '16px' }}>
-            {user?.fullName || 'Guest'}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {user?.email || 'Not logged in'}
+            {user?.firstName || 'Guest'}
           </Typography>
         </Box>
         <OptionsMenu />

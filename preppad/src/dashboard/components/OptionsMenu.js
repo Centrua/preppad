@@ -64,7 +64,6 @@ export default function OptionsMenu() {
           },
         }}
       >
-        <MenuItem onClick={handleClose}>Manage Business</MenuItem>
         <Divider />
         <MenuItem
           onClick={handleLogout}
