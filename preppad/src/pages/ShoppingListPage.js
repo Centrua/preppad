@@ -221,10 +221,12 @@ export default function ShoppingListPage() {
       try {
         const itemIds = rows.map((row) => row.id);
         const quantities = rows.map((row) => row.quantity);
+        const notes = rows.map((row) => row.note || '');
 
         const payload = {
           itemIds,
           quantities,
+          notes,
           purchaseLocation,
         };
 
@@ -550,11 +552,13 @@ export default function ShoppingListPage() {
 
         const itemIds = customList.map((item) => item.id);
         const quantities = customList.map((item) => item.quantity);
+        const notes = rows.map((row) => row.note || '');
 
         const payload = {
           itemIds,
           quantities,
           purchaseLocation,
+          notes,
         };
 
         const purchaseRes = await fetch(`${API_BASE}/pending-purchase`, {

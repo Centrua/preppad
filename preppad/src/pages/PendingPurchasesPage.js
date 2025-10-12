@@ -161,9 +161,11 @@ export default function PendingPurchasesPage() {
   };
 
   const getPurchaseText = (purchase) => {
-    const lines = purchase.itemNames.map((name, idx) =>
-      `${name}: ${purchase.quantities[idx]}`
-    );
+    const lines = purchase.itemNames.map((name, idx) => {
+      const quantity = purchase.quantities[idx];
+      const note = purchase.notes && purchase.notes[idx] ? `Note: ${purchase.notes[idx]}` : 'No note';
+      return `${name}: ${quantity} (${note})`;
+    });
     return `Purchase ID: ${purchase.id}\n` + lines.join('\n');
   };
 
@@ -435,6 +437,7 @@ export default function PendingPurchasesPage() {
                     <TableHead>
                       <TableRow>
                         <TableCell align="left" sx={{ minWidth: 120, fontWeight: 'bold' }}>Item Name</TableCell>
+                        <TableCell align="center" sx={{ width: 150, fontWeight: 'bold' }}>Note</TableCell>
                         <TableCell align="center" sx={{ width: 150, fontWeight: 'bold' }}>Quantity Purchased</TableCell>
                       </TableRow>
                     </TableHead>
@@ -446,6 +449,11 @@ export default function PendingPurchasesPage() {
                         .map((itemName, idx) => (
                           <TableRow key={`${selectedPurchase.id}-${idx}`}>
                             <TableCell align="left" sx={{ px: 2 }}>{itemName}</TableCell>
+                            <TableCell align="center" sx={{ px: 2 }}>
+                              {selectedPurchase.notes && selectedPurchase.notes[idx]
+                                ? selectedPurchase.notes[idx]
+                                : 'No note'}
+                            </TableCell>
                             <TableCell align="center" sx={{ px: 2 }}>
                               <TextField
                                 type="number"
