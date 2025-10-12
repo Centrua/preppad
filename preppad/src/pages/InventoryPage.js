@@ -168,6 +168,7 @@ export default function InventoryPage() {
 
       // 🔁 Trigger backend shopping list logic for updated items
       if (editingItem) {
+        if ((form.max - form.quantityInStock) > 0) {
         try {
           const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
             method: 'POST',
@@ -175,7 +176,7 @@ export default function InventoryPage() {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ quantity: editingItem.max - editingItem.quantityInStock }),
+            body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
           });
 
           if (!updateListRes.ok) {
@@ -185,6 +186,7 @@ export default function InventoryPage() {
         } catch (err) {
           console.error('❌ Error calling /shopping-list/:id:', err);
         }
+      }
       } else {
         try {
           const itemIdRes = await fetch(`${API_BASE}/ingredients/item-id?itemName=${form.itemName}`, {
@@ -204,6 +206,7 @@ export default function InventoryPage() {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
               },
+              body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
             });
 
             if (!updateListRes.ok) {
