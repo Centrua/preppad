@@ -416,33 +416,36 @@ export default function PendingPurchasesPage() {
             )}
             {selectedPurchase && (
               <>
-                <Typography
-                  variant="h6"
-                  align="center"
-                  gutterBottom
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  All Items
-                </Typography>
-                <TextField
-                  label="Search Items"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  placeholder="Search by item name"
-                />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 3}}>
+                  <Typography
+                    variant="h6"
+                    align="center"
+                    gutterBottom
+                    sx={{ fontWeight: 'bold', ml: 5  }}
+                  >
+                    All Items
+                  </Typography>
+                  <TextField
+                    label="Search Items"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    placeholder="Search by item name"
+                    sx={{ width: '300px', marginLeft: 'auto' }}
+                  />
+                </Box>
+
                 <TableContainer component={Paper}>
                   <Table
-                    size="small"
-                    aria-label="items table"
-                    sx={{ width: '100%', tableLayout: 'fixed', marginLeft: 'auto', marginRight: 'auto' }}
+                    aria-label="all items table"
+                    sx={{ border: '1px solid #ddd', borderCollapse: 'collapse' }}
                   >
                     <TableHead>
                       <TableRow>
-                        <TableCell align="left" sx={{ minWidth: 120, fontWeight: 'bold' }}>Item Name</TableCell>
-                        <TableCell align="center" sx={{ width: 150, fontWeight: 'bold' }}>Note</TableCell>
-                        <TableCell align="center" sx={{ width: 150, fontWeight: 'bold' }}>Quantity Purchased</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Item Name</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'normal', wordWrap: 'break-word' }}>Note</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Quantity Purchased</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -451,14 +454,26 @@ export default function PendingPurchasesPage() {
                           itemName.toLowerCase().includes(searchQuery.toLowerCase())
                         )
                         .map((itemName, idx) => (
-                          <TableRow key={`${selectedPurchase.id}-${idx}`}>
-                            <TableCell align="left" sx={{ px: 2 }}>{itemName}</TableCell>
-                            <TableCell align="center" sx={{ px: 2, wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                          <TableRow key={`${selectedPurchase.id}-${idx}`} sx={{ border: '1px solid #ddd' }}>
+                            <TableCell sx={{ border: '1px solid #ddd' }}>{itemName}</TableCell>
+                            <TableCell
+                              sx={{
+                                border: '1px solid #ddd',
+                                width: '200px',
+                                whiteSpace: 'pre-line',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
+                                hyphens: 'auto',
+                                textOverflow: 'clip',
+                                display: 'table-cell',
+                                verticalAlign: 'top',
+                              }}
+                            >
                               {selectedPurchase.notes && selectedPurchase.notes[idx]
                                 ? selectedPurchase.notes[idx]
                                 : 'No note'}
                             </TableCell>
-                            <TableCell align="center" sx={{ px: 2 }}>
+                            <TableCell sx={{ border: '1px solid #ddd' }}>
                               <TextField
                                 type="number"
                                 size="small"
@@ -475,8 +490,22 @@ export default function PendingPurchasesPage() {
                   </Table>
                 </TableContainer>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, marginTop: 3 }}>
-                  <Typography variant="subtitle1" sx={{ minWidth: 130, textAlign: 'right' }}>
+      
+
+                <TextField
+                  label="Purchase Location"
+                  value={purchaseLocation}
+                  onChange={(e) => setPurchaseLocation(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  disabled={selectedPurchase.status === 'completed'}
+                >
+      
+                </TextField>
+
+
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left', gap: 1, marginTop: 3, marginLeft: -2 }}>
+                  <Typography variant="subtitle1" sx={{ minWidth: 130, textAlign: 'left' }}>
                     Total Price ($):
                   </Typography>
                   <TextField
@@ -490,17 +519,6 @@ export default function PendingPurchasesPage() {
                     disabled={selectedPurchase.status === 'completed'}
                   />
                 </Box>
-
-                <TextField
-                  label="Purchase Location"
-                  value={purchaseLocation}
-                  onChange={(e) => setPurchaseLocation(e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  disabled={selectedPurchase.status === 'completed'}
-                >
-      
-                </TextField>
               </>
             )}
           </DialogContent>
