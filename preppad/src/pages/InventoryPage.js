@@ -109,7 +109,7 @@ export default function InventoryPage() {
       setFormError('Please specify how many of the tracked unit(s) are in a Whole/Package.');
       return;
     }
-//
+    //
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
@@ -156,7 +156,7 @@ export default function InventoryPage() {
           console.error('❌ Error calling /shopping-list/:id:', err);
         }
       } else {
-          try {
+        try {
           const itemIdRes = await fetch(`${API_BASE}/ingredients/item-id?itemName=${form.itemName}`, {
             method: 'GET',
             headers: {
@@ -379,17 +379,19 @@ export default function InventoryPage() {
 
 
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" gutterBottom sx={{ mb: -1 }}>
-              Inventory List
-            </Typography>
-            <TextField
-              label="Search Inventory"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              margin="normal"
-              placeholder="Search by item name"
-              sx={{ mb: 2, width: '33%' }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 2 }}>
+              <Typography variant="h5" gutterBottom>
+                Inventory List
+              </Typography>
+              <TextField
+                label="Search Inventory"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                margin="normal"
+                placeholder="Search by item name"
+                sx={{ width: '33%' }}
+              />
+            </Box>
             <Paper elevation={3}>
               <Table sx={{ borderCollapse: 'collapse' }}>
                 <TableHead>
