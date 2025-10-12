@@ -57,6 +57,9 @@ export default function InventoryPage() {
   const [formError, setFormError] = useState('');
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [allowedUnitsPrev, setAllowedUnitsPrev] = useState([]);
+  const [allowedUnitsDialogOpen, setAllowedUnitsDialogOpen] = useState(false);
+  const [pendingAllowedUnits, setPendingAllowedUnits] = useState(null);
 
   const token = localStorage.getItem('token');
 
@@ -76,9 +79,35 @@ export default function InventoryPage() {
     fetchItems();
   }, []);
 
+  useEffect(() => {
+    setAllowedUnitsPrev(form.allowedUnits);
+  }, []);
+
+  const handleAllowedUnitsChange = (newAllowedUnits) => {
+    setPendingAllowedUnits(newAllowedUnits);
+    setAllowedUnitsDialogOpen(true);
+  };
+
+  const confirmAllowedUnitsChange = () => {
+    setForm((prev) => ({ ...prev, allowedUnits: pendingAllowedUnits }));
+    setAllowedUnitsPrev(pendingAllowedUnits);
+    setAllowedUnitsDialogOpen(false);
+    setPendingAllowedUnits(null);
+  };
+
+  const cancelAllowedUnitsChange = () => {
+    setAllowedUnitsDialogOpen(false);
+    setPendingAllowedUnits(null);
+  };
+
   const handleChange = (e) => {
     if (e.target.name === 'allowedUnits') {
-      setForm({ ...form, allowedUnits: e.target.value });
+      const newAllowedUnits = e.target.value;
+      if (JSON.stringify(newAllowedUnits) !== JSON.stringify(allowedUnitsPrev)) {
+        handleAllowedUnitsChange(newAllowedUnits);
+      } else {
+        setForm({ ...form, allowedUnits: newAllowedUnits });
+      }
     } else if (e.target.name === 'conversionRate') {
       setConversionRate(e.target.value);
     } else {
@@ -475,6 +504,20 @@ export default function InventoryPage() {
             <Button onClick={() => setDuplicateDialogOpen(false)} color="primary">
               OK
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Allowed Units Confirmation Dialog */}
+        <Dialog open={allowedUnitsDialogOpen} onClose={cancelAllowedUnitsChange}>
+          <DialogTitle>Confirm Allowed Units Change</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to change the allowed units? This may affect how this ingredient is tracked.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={cancelAllowedUnitsChange} color="inherit">Cancel</Button>
+            <Button onClick={confirmAllowedUnitsChange} color="primary" variant="contained">Confirm</Button>
           </DialogActions>
         </Dialog>
       </Box>
