@@ -106,10 +106,10 @@ export default function InventoryPage() {
       form.baseUnit === 'Whole/Package' &&
       (!conversionRate || isNaN(Number(conversionRate)) || Number(conversionRate) <= 0)
     ) {
-      setFormError('Please specify how many of the allowed unit(s) are in a Whole/Package.');
+      setFormError('Please specify how many of the tracked unit(s) are in a Whole/Package.');
       return;
     }
-//
+    //
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
@@ -156,7 +156,7 @@ export default function InventoryPage() {
           console.error('❌ Error calling /shopping-list/:id:', err);
         }
       } else {
-          try {
+        try {
           const itemIdRes = await fetch(`${API_BASE}/ingredients/item-id?itemName=${form.itemName}`, {
             method: 'GET',
             headers: {
@@ -267,155 +267,172 @@ export default function InventoryPage() {
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
-        </Typography>
-        {formError && (
-          <Typography color="error" sx={{ mb: 2 }}>
-            {formError}
-          </Typography>
-        )}
-        <Paper elevation={3} sx={{ p: 3, mb: 5 }}>
-          <form onSubmit={handleSubmit}>
-            <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap={2}>
-              <FormControl fullWidth required>
-                <TextField
-                  name="itemName"
-                  label="Item Name"
-                  value={form.itemName}
-                  onChange={handleChange}
-                  required
-                />
-              </FormControl>
-              <FormControl fullWidth required>
-                <InputLabel id="allowed-units-label">Allowed Units</InputLabel>
-                <Select
-                  labelId="allowed-units-label"
-                  name="allowedUnits"
-                  multiple
-                  value={form.allowedUnits}
-                  label="Allowed Units"
-                  onChange={handleChange}
-                  renderValue={(selected) => selected.join(', ')}
-                >
-                  {unitOptions.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth required>
-                <InputLabel id="base-unit-label">Base Unit (for storage)</InputLabel>
-                <Select
-                  labelId="base-unit-label"
-                  name="baseUnit"
-                  value={form.baseUnit}
-                  label="Base Unit (for storage)"
-                  onChange={handleChange}
-                >
-                  {unitOptions.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {form.baseUnit === 'Whole/Package' && (
-                <TextField
-                  name="conversionRate"
-                  label={`How many slices are in a Whole/Package?`}
-                  type="number"
-                  value={conversionRate}
-                  onChange={handleChange}
-                  required
-                  inputProps={{ min: 1 }}
-                />
-              )}
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+          {/* Add Inventory Item Section */}
+          <Box sx={{ width: '33%' }}>
+            <Typography variant="h5" gutterBottom>
+              {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
+            </Typography>
+            {formError && (
+              <Typography color="error" sx={{ mb: 2 }}>
+                {formError}
+              </Typography>
+            )}
+            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+              <form onSubmit={handleSubmit}>
+                <Box display="flex" flexDirection="column" gap={2}>
+                  {/* Form fields */}
+                  <FormControl fullWidth required>
+                    <TextField
+                      name="itemName"
+                      label="Item Name"
+                      value={form.itemName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </FormControl>
+                  <FormControl fullWidth required>
+                    <InputLabel id="allowed-units-label">Tracked Units</InputLabel>
+                    <Select
+                      labelId="allowed-units-label"
+                      name="allowedUnits"
+                      multiple
+                      value={form.allowedUnits}
+                      label="Tracked Units"
+                      onChange={handleChange}
+                      renderValue={(selected) => selected.join(', ')}
+                    >
+                      {unitOptions.map((unit) => (
+                        <MenuItem key={unit} value={unit}>
+                          {unit}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth required>
+                    <InputLabel id="base-unit-label">Base Unit (for storage)</InputLabel>
+                    <Select
+                      labelId="base-unit-label"
+                      name="baseUnit"
+                      value={form.baseUnit}
+                      label="Base Unit (for storage)"
+                      onChange={handleChange}
+                    >
+                      {unitOptions.map((unit) => (
+                        <MenuItem key={unit} value={unit}>
+                          {unit}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  {form.baseUnit === 'Whole/Package' && (
+                    <TextField
+                      name="conversionRate"
+                      label={`How many slices are in a Whole/Package?`}
+                      type="number"
+                      value={conversionRate}
+                      onChange={handleChange}
+                      required
+                      inputProps={{ min: 1 }}
+                    />
+                  )}
+                  <TextField
+                    name="quantityInStock"
+                    label="Quantity in Stock"
+                    type="number"
+                    value={form.quantityInStock}
+                    onChange={handleChange}
+                    required
+                    inputProps={{ min: 0, step: 'any' }}
+                  />
+                  <TextField
+                    name="max"
+                    label="Max"
+                    type="number"
+                    value={form.max}
+                    onChange={handleChange}
+                    required
+                    inputProps={{ min: 1 }}
+                  />
+                </Box>
+                <Box mt={3}>
+                  <Button variant="contained" color="primary" type="submit">
+                    {editingItem ? 'Update Inventory' : 'Submit Inventory'}
+                  </Button>
+                  {editingItem && (
+                    <Button sx={{ ml: 2 }} onClick={handleCancel} color="secondary">
+                      Cancel
+                    </Button>
+                  )}
+                </Box>
+              </form>
+            </Paper>
+          </Box>
+
+
+
+
+          <Divider orientation="vertical" flexItem sx={{ width: '2px', bgcolor: 'divider' }} />
+
+
+
+
+
+          <Box sx={{ flex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 2 }}>
+              <Typography variant="h5" gutterBottom>
+                Inventory List
+              </Typography>
               <TextField
-                name="quantityInStock"
-                label="Quantity in Stock"
-                type="number"
-                value={form.quantityInStock}
-                onChange={handleChange}
-                required
-                inputProps={{ min: 0, step: 'any' }}
-              />
-              <TextField
-                name="max"
-                label="Max"
-                type="number"
-                value={form.max}
-                onChange={handleChange}
-                required
-                inputProps={{ min: 1 }}
+                label="Search Inventory"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                margin="normal"
+                placeholder="Search by item name"
+                sx={{ width: '33%' }}
               />
             </Box>
-
-            <Box mt={3}>
-              <Button variant="contained" color="primary" type="submit">
-                {editingItem ? 'Update Inventory' : 'Submit Inventory'}
-              </Button>
-              {editingItem && (
-                <Button sx={{ ml: 2 }} onClick={handleCancel} color="secondary">
-                  Cancel
-                </Button>
-              )}
-            </Box>
-          </form>
-        </Paper>
-
-        <Typography variant="h6" gutterBottom>
-          Inventory List
-        </Typography>
-        <TextField
-          label="Search Inventory"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          fullWidth
-          margin="normal"
-          placeholder="Search by item name"
-          sx={{ mb: 4 }}
-        />
-        <Paper elevation={3}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Item</TableCell>
-                <TableCell>Allowed Units</TableCell>
-                <TableCell>Base Unit</TableCell>
-                <TableCell>Number in Whole/Package</TableCell>
-                <TableCell>Qty In Stock</TableCell>
-                <TableCell>Max</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody> 
-              {filteredItems.map(item => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.itemName}</TableCell>
-                  <TableCell>{(item.allowedUnits || []).join(', ')}</TableCell>
-                  <TableCell>{item.baseUnit}</TableCell>
-                  <TableCell>
-                    {item.baseUnit !== 'Whole/Package'
-                      ? 'N/A'
-                      : item.conversionRate || 'Not found'}
-                  </TableCell>
-                  <TableCell>{Math.ceil(Number(item.quantityInStock))}</TableCell>
-                  <TableCell>{item.max}</TableCell>
-                  <TableCell>
-                    <Button size="small" onClick={() => handleEdit(item)}>
-                      Edit
-                    </Button>
-                    <Button size="small" color="error" onClick={() => handleDeleteClick(item)}>
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
+            <Paper elevation={3}>
+              <Table sx={{ borderCollapse: 'collapse' }}>
+                <TableHead>
+                  <TableRow sx={{ borderBottom: '1px solid #ccc' }}>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Item</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Allowed Units</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Base Unit</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Number in Whole/Package</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Qty In Stock</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Max</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredItems.map(item => (
+                    <TableRow key={item.id} sx={{ borderBottom: '1px solid #ccc' }}>
+                      <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.itemName}</TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{(item.allowedUnits || []).join(', ')}</TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.baseUnit}</TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>
+                        {item.baseUnit !== 'Whole/Package'
+                          ? 'N/A'
+                          : item.conversionRate || 'Not found'}
+                      </TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{Math.ceil(Number(item.quantityInStock))}</TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.max}</TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid #ccc' }}>
+                        <Button size="small" onClick={() => handleEdit(item)}>
+                          Edit
+                        </Button>
+                        <Button size="small" color="error" onClick={() => handleDeleteClick(item)}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          </Box>
+        </Box>
 
         <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
           <DialogTitle>Delete Inventory</DialogTitle>

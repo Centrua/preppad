@@ -334,38 +334,42 @@ export default function PendingPurchasesPage() {
         </Box>
 
         <Paper elevation={3}>
-          <Table aria-label="pending purchases table">
+          <Table
+            aria-label="pending purchases table"
+            sx={{ border: '1px solid #ddd', borderCollapse: 'collapse' }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell />
-                <TableCell>Purchase ID</TableCell>
-                <TableCell>Item Name</TableCell>
-                <TableCell>Quantity</TableCell>
-                <TableCell>Location</TableCell>
-                <TableCell onClick={handleSortToggle} style={{ cursor: 'pointer', fontWeight: 'bold' }}>
+                <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Purchase ID</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Item Name</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Quantity</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Location</TableCell>
+                <TableCell
+                  onClick={handleSortToggle}
+                  style={{ cursor: 'pointer', fontWeight: 'bold', border: '1px solid #ddd' }}
+                >
                   Date {sortOrder === 'desc' ? '↓' : '↑'}
                 </TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold', border: '1px solid #ddd' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sortedPurchases.map((purchase) => (
-                <TableRow key={purchase.id} hover>
-                  <TableCell />
-                  <TableCell>{purchase.id}</TableCell>
-                  <TableCell>
+                <TableRow key={purchase.id} hover sx={{ border: '1px solid #ddd' }}>
+                  <TableCell sx={{ border: '1px solid #ddd' }}>{purchase.id}</TableCell>
+                  <TableCell sx={{ border: '1px solid #ddd' }}>
                     {purchase.itemNames && purchase.itemNames.length > 0
                       ? purchase.itemNames[0]
                       : ''}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ border: '1px solid #ddd' }}>
                     {purchase.quantities && purchase.quantities.length > 0
                       ? purchase.quantities[0]
                       : ''}
                   </TableCell>
-                  <TableCell>{purchase.purchaseLocation || 'N/A'}</TableCell>
-                  <TableCell>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
-                  <TableCell align="center">
+                  <TableCell sx={{ border: '1px solid #ddd' }}>{purchase.purchaseLocation || 'N/A'}</TableCell>
+                  <TableCell sx={{ border: '1px solid #ddd' }}>{new Date(purchase.createdAt).toLocaleString()}</TableCell>
+                  <TableCell align="center" sx={{ border: '1px solid #ddd' }}>
                     <Button
                       variant="contained"
                       color={purchase.status === 'completed' ? 'info' : 'primary'}

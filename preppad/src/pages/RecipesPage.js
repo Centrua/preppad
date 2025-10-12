@@ -328,7 +328,7 @@ export default function RecipePage() {
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h5" gutterBottom>
           Recipe Management
         </Typography>
 
@@ -480,7 +480,7 @@ export default function RecipePage() {
         </Paper>
 
         {/* Recipes List */}
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h5" gutterBottom>
           Recipes
         </Typography>
         {categoryOptions.map((cat) => {
