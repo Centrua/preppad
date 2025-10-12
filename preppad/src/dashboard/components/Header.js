@@ -3,8 +3,6 @@ import StarIcon from '@mui/icons-material/Star';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Avatar, Box, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import * as React from 'react';
-import MenuButton from './MenuButton';
-import NavbarBreadcrumbs from './NavbarBreadcrumbs';
 
 export default function Header() {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -31,7 +29,6 @@ export default function Header() {
       }}
       spacing={2}
     >
-      <NavbarBreadcrumbs />
       <Stack direction="row" sx={{ gap: 1 }}>
         <Menu
           anchorEl={anchorEl}

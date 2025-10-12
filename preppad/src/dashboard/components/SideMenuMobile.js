@@ -62,7 +62,7 @@ function SideMenuMobile({ open, toggleDrawer }) {
           >
             <Avatar
               sizes="small"
-              alt={user?.email || 'User'}
+              alt={user?.fullName || 'User'}
               src="/static/images/avatar/7.jpg"
               sx={{ width: 24, height: 24 }}
             />
@@ -70,9 +70,6 @@ function SideMenuMobile({ open, toggleDrawer }) {
               {user?.fullName || 'Guest'}
             </Typography>
           </Stack>
-          <MenuButton showBadge>
-            <NotificationsRoundedIcon />
-          </MenuButton>
         </Stack>
         <Divider />
         <Stack sx={{ flexGrow: 1 }}>
