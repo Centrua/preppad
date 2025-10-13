@@ -874,6 +874,55 @@ export default function RecipePage() {
                     Add Variation
                   </Button>
                 </Box>
+
+                {/* Show variations as sub-recipes */}
+                  {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
+                    <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
+                      {recipe.variations.map(variationId => {
+                        const variation = recipes.find(r => r.id === variationId);
+                        if (!variation) return null;
+                        return (
+                          <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
+                            <Typography variant="subtitle1">{variation.title}</Typography>
+                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
+                            {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
+                              if (!ing) return null;
+                              const unit = ing.unit || '';
+                              return (
+                                <Typography key={i} sx={{ ml: 2 }}>
+                                  • {ing.title}
+                                  {ing.quantity && (
+                                    <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                                  )}
+                                </Typography>
+                              );
+                            })}
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                              Unit Cost: ${parseFloat(variation.unitCost).toFixed(2)}
+                            </Typography>
+                            <Box display="flex" gap={1} mt={1}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => editRecipe(recipes.findIndex(r => r.id === variation.id))}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => openDeleteVariationDialog(variation, recipe)}
+                              >
+                                Delete Variation
+                              </Button>
+                            </Box>
+                          </Paper>
+                        );
+                      })}
+                    </Box>
+                  )}
               </Paper>
             ))}
           </Box>
