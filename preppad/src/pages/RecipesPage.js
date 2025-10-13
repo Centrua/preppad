@@ -37,6 +37,11 @@ export default function RecipePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
 
+  // State for add variation dialog
+  const [addVariationDialogOpen, setAddVariationDialogOpen] = useState(false);
+  const [variationTitleInput, setVariationTitleInput] = useState('');
+  const [variationBaseRecipe, setVariationBaseRecipe] = useState(null);
+
   const API_BASE = process.env.REACT_APP_API_BASE_URL; // adjust to your backend
 
   // Fetch recipes on mount
@@ -325,6 +330,193 @@ export default function RecipePage() {
     'Teaspoons',
   ].sort();
 
+  // Handler to add a variation (clone recipe with a new title and POST to backend)
+  const handleAddVariation = async (recipe) => {
+    const variationTitle = prompt('Enter a name for the new variation:', recipe.title + ' Variation');
+    if (!variationTitle) return;
+    const token = localStorage.getItem('token');
+    // Clone the recipe, but with a new title and no id
+    const newVariation = {
+      ...recipe,
+      title: variationTitle,
+    };
+    // POST the new variation to the backend
+    try {
+      const res = await fetch(`${API_BASE}/recipes`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newVariation.title,
+          unitCost: parseFloat(newVariation.unitCost),
+          ingredients: [],
+          ingredientsQuantity: [],
+          ingredientsUnit: [],
+          categories: newVariation.categories,
+          variations: [],
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Failed to add variation: ${errData.error || res.statusText}`);
+        return;
+      }
+      const savedVariation = await res.json();
+      // PUT to update the original recipe's variations
+      const updatedVariations = [...(recipe.variations || []), savedVariation.id];
+      await fetch(`${API_BASE}/recipes/${recipe.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: recipe.id,
+          variations: updatedVariations,
+        }),
+      });
+      // Update UI
+      setRecipes((prev) => prev.map(r =>
+        r.id === recipe.id
+          ? { ...r, variations: updatedVariations }
+          : r
+      ));
+      setRecipes((prev) => [...prev, savedVariation]);
+    } catch (err) {
+      console.error(err);
+      alert('Unexpected error occurred');
+    }
+  };
+
+  // Handler to delete a variation (delete by id and update original recipe's variations)
+  const handleDeleteVariation = async (variationRecipe, originalRecipe) => {
+    if (!variationRecipe.id) {
+      alert('Variation does not have an id.');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to delete this variation?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      // Delete the variation recipe
+      const res = await fetch(`${API_BASE}/recipes/${variationRecipe.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        alert('Failed to delete variation');
+        return;
+      }
+      // Update the original recipe's variations array
+      if (originalRecipe) {
+        const updatedVariations = (originalRecipe.variations || []).filter(id => id !== variationRecipe.id);
+        await fetch(`${API_BASE}/recipes/${originalRecipe.id}`, {
+          method: 'PUT',
+          headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: originalRecipe.id,
+              variations: updatedVariations,
+            }),
+          });
+          setRecipes((prev) => prev.map(r =>
+            r.id === originalRecipe.id
+              ? { ...r, variations: updatedVariations }
+              : r
+          ));
+        }
+      // Remove the variation from UI
+      setRecipes((prev) => prev.filter(r => r.id !== variationRecipe.id));
+    } catch (err) {
+      console.error(err);
+      alert('Unexpected error occurred');
+    }
+  };
+
+  // Filter out recipes that are variations (have variationOf set) or have 'variation' in the title
+  const mainRecipes = recipes.filter(r => !r.variationOf && !(r.title && r.title.toLowerCase().includes('variation')));
+
+  // Handler to open add variation dialog
+  const openAddVariationDialog = (recipe) => {
+    setVariationBaseRecipe(recipe);
+    setVariationTitleInput(recipe.title + ' Variation');
+    setAddVariationDialogOpen(true);
+  };
+
+  // Handler to confirm add variation
+  const handleConfirmAddVariation = async () => {
+    const title = variationTitleInput.trim();
+    if (!title) {
+      alert('Variation title cannot be empty');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      // Clone the base recipe for the variation
+      const baseRecipe = variationBaseRecipe;
+      const newVariation = {
+        title,
+        unitCost: baseRecipe.unitCost,
+        ingredients: [],
+        ingredientsQuantity: [],
+        ingredientsUnit: [],
+        categories: baseRecipe.categories,
+        variations: [],
+      };
+      // POST the new variation recipe
+      const res = await fetch(`${API_BASE}/recipes`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newVariation),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Failed to add variation: ${errData.error || res.statusText}`);
+        return;
+      }
+      const savedVariation = await res.json();
+      // Update the base recipe to link to the new variation
+      const updatedVariations = [...(baseRecipe.variations || []), savedVariation.id];
+      await fetch(`${API_BASE}/recipes/${baseRecipe.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: baseRecipe.id,
+          variations: updatedVariations,
+        }),
+      });
+      // Update UI
+      setRecipes((prev) => prev.map(r =>
+        r.id === baseRecipe.id
+          ? { ...r, variations: updatedVariations }
+          : r
+      ));
+      setRecipes((prev) => [...prev, savedVariation]);
+      setAddVariationDialogOpen(false);
+      setVariationTitleInput('');
+      setVariationBaseRecipe(null);
+    } catch (err) {
+      console.error(err);
+      alert('Unexpected error occurred');
+    }
+  };
+
+  // Handler to cancel add variation
+  const handleCancelAddVariation = () => {
+    setAddVariationDialogOpen(false);
+    setVariationTitleInput('');
+    setVariationBaseRecipe(null);
+  };
+
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
@@ -484,7 +676,7 @@ export default function RecipePage() {
           Recipes
         </Typography>
         {categoryOptions.map((cat) => {
-          const catRecipes = recipes.filter(r => (r.categories || []).includes(cat));
+          const catRecipes = mainRecipes.filter(r => (r.categories || []).includes(cat));
           if (catRecipes.length === 0) return null;
           return (
             <Box key={cat} sx={{ mb: 4 }}>
@@ -504,7 +696,8 @@ export default function RecipePage() {
                   <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
                     Ingredients:
                   </Typography>
-                  {recipe.ingredients.map((ing, i) => {
+                  {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ing, i) => {
+                    if (!ing) return null;
                     const unit = ing.unit || '';
                     return (
                       <Typography key={i} sx={{ ml: 2 }}>
@@ -534,19 +727,75 @@ export default function RecipePage() {
                     >
                       Delete
                     </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => openAddVariationDialog(recipe)}
+                    >
+                      Add Variation
+                    </Button>
                   </Box>
+
+                  {/* Show variations as sub-recipes */}
+                  {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
+                    <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
+                      {recipe.variations.map(variationId => {
+                        const variation = recipes.find(r => r.id === variationId);
+                        if (!variation) return null;
+                        return (
+                          <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
+                            <Typography variant="subtitle1">{variation.title}</Typography>
+                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
+                            {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
+                              if (!ing) return null;
+                              const unit = ing.unit || '';
+                              return (
+                                <Typography key={i} sx={{ ml: 2 }}>
+                                  • {ing.title}
+                                  {ing.quantity && (
+                                    <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                                  )}
+                                </Typography>
+                              );
+                            })}
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                              Unit Cost: ${parseFloat(variation.unitCost).toFixed(2)}
+                            </Typography>
+                            <Box display="flex" gap={1} mt={1}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => editRecipe(recipes.findIndex(r => r.id === variation.id))}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => handleDeleteVariation(variation, recipe)}
+                              >
+                                Delete Variation
+                              </Button>
+                            </Box>
+                          </Paper>
+                        );
+                      })}
+                    </Box>
+                  )}
                 </Paper>
               ))}
             </Box>
           );
         })}
         {/* Show recipes with no category */}
-        {recipes.filter(r => !r.categories || r.categories.length === 0).length > 0 && (
+        {mainRecipes.filter(r => !r.categories || r.categories.length === 0).length > 0 && (
           <Box sx={{ mb: 4 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
               Uncategorized
             </Typography>
-            {recipes.filter(r => !r.categories || r.categories.length === 0).map((recipe, index) => (
+            {mainRecipes.filter(r => !r.categories || r.categories.length === 0).map((recipe, index) => (
               <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
                 <Grid container justifyContent="space-between" alignItems="center">
                   <Grid item>
@@ -589,6 +838,13 @@ export default function RecipePage() {
                   >
                     Delete
                   </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => openAddVariationDialog(recipe)}
+                  >
+                    Add Variation
+                  </Button>
                 </Box>
               </Paper>
             ))}
@@ -608,6 +864,28 @@ export default function RecipePage() {
             <Button onClick={confirmDelete} color="error">
               Delete
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Add Variation Dialog */}
+        <Dialog open={addVariationDialogOpen} onClose={handleCancelAddVariation}>
+          <DialogTitle>Add Recipe Variation</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Enter a name for the new variation:
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Variation Title"
+              fullWidth
+              value={variationTitleInput}
+              onChange={e => setVariationTitleInput(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelAddVariation} color="inherit">Cancel</Button>
+            <Button onClick={handleConfirmAddVariation} color="primary" variant="contained">Add</Button>
           </DialogActions>
         </Dialog>
       </Box>
