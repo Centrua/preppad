@@ -59,7 +59,11 @@ export default function RecipePage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setRecipes(data);
+          // Map itemName to title if present
+          const mapped = Array.isArray(data)
+            ? data.map(r => r.itemName ? { ...r, title: r.itemName } : r)
+            : data;
+          setRecipes(mapped);
         } else {
           console.error('Failed to fetch recipes');
         }
@@ -78,7 +82,11 @@ export default function RecipePage() {
     });
     if (res.ok) {
       const data = await res.json();
-      setRecipes(data);
+      // Map itemName to title if present
+      const mapped = Array.isArray(data)
+        ? data.map(r => r.itemName ? { ...r, title: r.itemName } : r)
+        : data;
+      setRecipes(mapped);
     } else {
       console.error('Failed to fetch recipes');
     }
@@ -131,21 +139,6 @@ export default function RecipePage() {
     setForm({ ...form, ingredients: updatedIngredients });
   };
 
-  function combineIngredients(recipe) {
-    const titles = recipe.ingredients || [];
-    const quantities = recipe.ingredientsQuantity || [];
-    const units = recipe.ingredientsUnit || [];
-
-    const ingredients = titles.map((title, idx) => ({
-      title,
-      quantity: quantities[idx] || '',
-      unit: units[idx] || '',
-    }));
-
-    return { ...recipe, ingredients };
-  }
-
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.unitCost.toString().trim()) {
@@ -172,7 +165,7 @@ export default function RecipePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: form.title,
+          itemName: form.title,
           unitCost: parseFloat(form.unitCost),
           ingredients: form.ingredients.map(i => i.inventoryId),
           ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
@@ -188,30 +181,32 @@ export default function RecipePage() {
       }
 
       const savedRecipe = await res.json();
+      // Map itemName to title if present
+      const normalizedRecipe = savedRecipe.itemName ? { ...savedRecipe, title: savedRecipe.itemName } : savedRecipe;
 
-        function combineIngredients(recipe) {
-          if (!recipe.ingredients || !recipe.ingredientsQuantity || !recipe.ingredientsUnit) {
-            return [];
-          }
-          return recipe.ingredients.map((title, idx) => ({
-            title,
-            quantity: recipe.ingredientsQuantity[idx],
-            unit: recipe.ingredientsUnit[idx],
-          }));
+      function combineIngredients(recipe) {
+        if (!recipe.ingredients || !recipe.ingredientsQuantity || !recipe.ingredientsUnit) {
+          return [];
         }
+        return recipe.ingredients.map((title, idx) => ({
+          title,
+          quantity: recipe.ingredientsQuantity[idx],
+          unit: recipe.ingredientsUnit[idx],
+        }));
+      }
 
-        const normalizedRecipe = {
-          ...savedRecipe,
-          ingredients: combineIngredients(savedRecipe),
-        };
+      const normalizedWithIngredients = {
+        ...normalizedRecipe,
+        ingredients: combineIngredients(normalizedRecipe),
+      };
 
-        if (editingId) {
-          setRecipes((prev) =>
-            prev.map((r) => (r.id === editingId ? normalizedRecipe : r))
-          );
-        } else {
-          setRecipes((prev) => [...prev, normalizedRecipe]);
-        }
+      if (editingId) {
+        setRecipes((prev) =>
+          prev.map((r) => (r.id === editingId ? normalizedWithIngredients : r))
+        );
+      } else {
+        setRecipes((prev) => [...prev, normalizedWithIngredients]);
+      }
 
       await fetchRecipes();
 
@@ -354,7 +349,7 @@ export default function RecipePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: newVariation.title,
+          itemName: newVariation.title,
           unitCost: parseFloat(newVariation.unitCost),
           ingredients: [],
           ingredientsQuantity: [],
@@ -463,7 +458,7 @@ export default function RecipePage() {
       // Clone the base recipe for the variation
       const baseRecipe = variationBaseRecipe;
       const newVariation = {
-        title,
+        itemName: title,
         unitCost: baseRecipe.unitCost,
         ingredients: [],
         ingredientsQuantity: [],
@@ -550,6 +545,9 @@ export default function RecipePage() {
       <Box sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
           Recipe Management
+        </Typography>
+        <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
+          Disclaimer: Recipes should only contain base ingredients. Do not include additional or optional ingredients in the recipe.
         </Typography>
 
         {/* Form */}
