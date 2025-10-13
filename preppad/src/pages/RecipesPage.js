@@ -363,7 +363,11 @@ export default function RecipePage() {
         alert(`Failed to add variation: ${errData.error || res.statusText}`);
         return;
       }
-      const savedVariation = await res.json();
+      let savedVariation = await res.json();
+      // Map itemName to title for immediate UI update
+      if (savedVariation.itemName && !savedVariation.title) {
+        savedVariation = { ...savedVariation, title: savedVariation.itemName };
+      }
       // PUT to update the original recipe's variations
       const updatedVariations = [...(recipe.variations || []), savedVariation.id];
       await fetch(`${API_BASE}/recipes/${recipe.id}`, {
@@ -480,7 +484,11 @@ export default function RecipePage() {
         alert(`Failed to add variation: ${errData.error || res.statusText}`);
         return;
       }
-      const savedVariation = await res.json();
+      let savedVariation = await res.json();
+      // Map itemName to title for immediate UI update
+      if (savedVariation.itemName && !savedVariation.title) {
+        savedVariation = { ...savedVariation, title: savedVariation.itemName };
+      }
       // Update the base recipe to link to the new variation
       const updatedVariations = [...(baseRecipe.variations || []), savedVariation.id];
       await fetch(`${API_BASE}/recipes/${baseRecipe.id}`, {
