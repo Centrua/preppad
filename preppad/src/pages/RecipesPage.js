@@ -440,8 +440,9 @@ export default function RecipePage() {
     }
   };
 
-  // Filter out recipes that are variations (have variationOf set) or have 'variation' in the title
-  const mainRecipes = recipes.filter(r => !r.variationOf && !(r.title && r.title.toLowerCase().includes('variation')));
+  // Only show recipes that are not listed as a variation in any recipe's variations array
+  const allVariationIds = recipes.flatMap(r => r.variations || []);
+  const mainRecipes = recipes.filter(r => !allVariationIds.includes(r.id));
 
   // Handler to open add variation dialog
   const openAddVariationDialog = (recipe) => {
