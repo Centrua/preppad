@@ -617,7 +617,6 @@ export default function ShoppingListPage() {
                 {`${ingredient.name} (${ingredient.baseUnit})`}
               </MenuItem>
             ))}
-            <MenuItem value="Other">Other</MenuItem>
           </TextField>
           <TextField
             label="Quantity"
