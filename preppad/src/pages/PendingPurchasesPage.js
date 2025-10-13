@@ -38,6 +38,7 @@ export default function PendingPurchasesPage() {
   const [printText, setPrintText] = useState('');
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [confirmInventoryDialogOpen, setConfirmInventoryDialogOpen] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,12 +98,17 @@ export default function PendingPurchasesPage() {
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
+    setConfirmInventoryDialogOpen(true);
+  };
+
+  const handleConfirmInventoryProceed = async () => {
     if (!selectedPurchase || !selectedPurchase.id) return;
     setFormError('');
 
     if (!purchaseLocation) {
       setFormError('Purchase location is required.');
+      setConfirmInventoryDialogOpen(false);
       return;
     }
 
@@ -125,6 +131,7 @@ export default function PendingPurchasesPage() {
       if (!res.ok) {
         const errData = await res.json();
         setFormError(`Failed to confirm purchase: ${errData.error || res.statusText}`);
+        setConfirmInventoryDialogOpen(false);
         return;
       }
 
@@ -154,8 +161,10 @@ export default function PendingPurchasesPage() {
 
       await fetchPendingPurchases();
       handleCloseDialog();
+      setConfirmInventoryDialogOpen(false);
     } catch (err) {
       setFormError('Unexpected error occurred');
+      setConfirmInventoryDialogOpen(false);
       console.error(err);
     }
   };
@@ -163,7 +172,7 @@ export default function PendingPurchasesPage() {
   const getPurchaseText = (purchase) => {
     const lines = purchase.itemNames.map((name, idx) => {
       const quantity = purchase.quantities[idx];
-      const note = purchase.notes && purchase.notes[idx] ? `Note: ${purchase.notes[idx]}` : 'No note';
+      const note = purchase.notes && purchase.notes[idx] ? `Note: ${purchase.notes[idx]}` : 'No note.';
       return `${name}: ${quantity} (${note})`;
     });
     return `Purchase ID: ${purchase.id}\n` + lines.join('\n');
@@ -471,7 +480,7 @@ export default function PendingPurchasesPage() {
                             >
                               {selectedPurchase.notes && selectedPurchase.notes[idx]
                                 ? selectedPurchase.notes[idx]
-                                : 'No note'}
+                                : 'No note.'}
                             </TableCell>
                             <TableCell sx={{ border: '1px solid #ddd' }}>
                               <TextField
@@ -526,6 +535,19 @@ export default function PendingPurchasesPage() {
                 Confirm List
               </Button>
             )}
+        {/* Confirm Inventory Update Dialog */}
+        <Dialog open={confirmInventoryDialogOpen} onClose={() => setConfirmInventoryDialogOpen(false)}>
+          <DialogTitle>Are you sure?</DialogTitle>
+          <DialogContent>
+            <Typography>
+              This will update the inventory and is <b>irreversible</b>.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmInventoryDialogOpen(false)} color="inherit">Cancel</Button>
+            <Button onClick={handleConfirmInventoryProceed} color="error" variant="contained">Proceed</Button>
+          </DialogActions>
+        </Dialog>
           </DialogActions>
         </Dialog>
 
