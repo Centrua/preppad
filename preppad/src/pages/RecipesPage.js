@@ -42,6 +42,11 @@ export default function RecipePage() {
   const [variationTitleInput, setVariationTitleInput] = useState('');
   const [variationBaseRecipe, setVariationBaseRecipe] = useState(null);
 
+  // State for delete variation dialog
+  const [deleteVariationDialogOpen, setDeleteVariationDialogOpen] = useState(false);
+  const [variationToDelete, setVariationToDelete] = useState(null);
+  const [originalRecipeForDelete, setOriginalRecipeForDelete] = useState(null);
+
   const API_BASE = process.env.REACT_APP_API_BASE_URL; // adjust to your backend
 
   // Fetch recipes on mount
@@ -396,7 +401,6 @@ export default function RecipePage() {
       alert('Variation does not have an id.');
       return;
     }
-    if (!window.confirm('Are you sure you want to delete this variation?')) return;
     try {
       const token = localStorage.getItem('token');
       // Delete the variation recipe
@@ -515,6 +519,29 @@ export default function RecipePage() {
     setAddVariationDialogOpen(false);
     setVariationTitleInput('');
     setVariationBaseRecipe(null);
+  };
+
+  // Handler to open delete variation dialog
+  const openDeleteVariationDialog = (variation, originalRecipe) => {
+    setVariationToDelete(variation);
+    setOriginalRecipeForDelete(originalRecipe);
+    setDeleteVariationDialogOpen(true);
+  };
+
+  // Handler to confirm delete variation
+  const handleConfirmDeleteVariation = async () => {
+    if (!variationToDelete) return;
+    await handleDeleteVariation(variationToDelete, originalRecipeForDelete);
+    setDeleteVariationDialogOpen(false);
+    setVariationToDelete(null);
+    setOriginalRecipeForDelete(null);
+  };
+
+  // Handler to cancel delete variation
+  const handleCancelDeleteVariation = () => {
+    setDeleteVariationDialogOpen(false);
+    setVariationToDelete(null);
+    setOriginalRecipeForDelete(null);
   };
 
   return (
@@ -774,7 +801,7 @@ export default function RecipePage() {
                                 size="small"
                                 variant="outlined"
                                 color="error"
-                                onClick={() => handleDeleteVariation(variation, recipe)}
+                                onClick={() => openDeleteVariationDialog(variation, recipe)}
                               >
                                 Delete Variation
                               </Button>
@@ -886,6 +913,20 @@ export default function RecipePage() {
           <DialogActions>
             <Button onClick={handleCancelAddVariation} color="inherit">Cancel</Button>
             <Button onClick={handleConfirmAddVariation} color="primary" variant="contained">Add</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Variation Confirmation Dialog */}
+        <Dialog open={deleteVariationDialogOpen} onClose={handleCancelDeleteVariation}>
+          <DialogTitle>Delete Variation</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this variation?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelDeleteVariation} color="inherit">Cancel</Button>
+            <Button onClick={handleConfirmDeleteVariation} color="error" variant="contained">Delete</Button>
           </DialogActions>
         </Dialog>
       </Box>
