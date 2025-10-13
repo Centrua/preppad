@@ -17,6 +17,7 @@ import {
   DialogActions,
   TextField,
   TableContainer,
+  Snackbar,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PrintIcon from '@mui/icons-material/Print';
@@ -42,6 +43,7 @@ export default function PendingPurchasesPage() {
   const [purchaseToDelete, setPurchaseToDelete] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
   const [searchQuery, setSearchQuery] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -175,13 +177,13 @@ export default function PendingPurchasesPage() {
       const note = purchase.notes && purchase.notes[idx] ? `Note: ${purchase.notes[idx]}` : 'No note.';
       return `${name}: ${quantity} (${note})`;
     });
-    return `Purchase ID: ${purchase.id}\n` + lines.join('\n');
+    return `Purchase ID: ${purchase.id}\nPurchase Location: ${purchase.purchaseLocation}\nTotal Price: ${purchase.totalPrice ? purchase.totalPrice : 'N/A'}\n\n` + lines.join('\n');
   };
 
   const handleCopy = (purchase) => {
     const text = getPurchaseText(purchase);
     navigator.clipboard.writeText(text);
-    alert('Copied purchase details to clipboard!');
+    setSnackbarOpen(true);
   };
 
   const handlePrint = (purchase) => {
@@ -575,6 +577,13 @@ export default function PendingPurchasesPage() {
           </DialogActions>
         </Dialog>
 
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={2000}
+          onClose={() => setSnackbarOpen(false)}
+          message="Copied purchase details to clipboard!"
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        />
       </Box>
     </Layout>
   );
