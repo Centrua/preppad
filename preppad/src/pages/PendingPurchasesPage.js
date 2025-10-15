@@ -427,15 +427,6 @@ export default function PendingPurchasesPage() {
             )}
             {selectedPurchase && (
               <>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 3}}>
-                  <Typography
-                    variant="h6"
-                    align="center"
-                    gutterBottom
-                    sx={{ fontWeight: 'bold', ml: 5  }}
-                  >
-                    All Items
-                  </Typography>
                   <TextField
                     label="Search Items"
                     value={searchQuery}
@@ -445,7 +436,6 @@ export default function PendingPurchasesPage() {
                     placeholder="Search by item name"
                     sx={{ width: '300px', marginLeft: 'auto' }}
                   />
-                </Box>
 
                 <TableContainer component={Paper}>
                   <Table
