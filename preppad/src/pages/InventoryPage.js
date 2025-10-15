@@ -309,7 +309,7 @@ export default function InventoryPage() {
                     value={conversionRate}
                     onChange={handleChange}
                     required
-                    inputProps={{ min: 1 }}
+                    inputProps={{ min: 1, step: 'any' }}
                   />
                   <TextField
                     name="quantityInStock"
@@ -327,7 +327,7 @@ export default function InventoryPage() {
                     value={form.max}
                     onChange={handleChange}
                     required
-                    inputProps={{ min: 1 }}
+                    inputProps={{ min: 1, step: 'any' }}
                   />
                 </Box>
                 <Box mt={3}>
