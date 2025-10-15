@@ -1,4 +1,6 @@
 import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 import {
   Box,
   Button,
@@ -14,8 +16,6 @@ import {
 import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditNoteIcon from '@mui/icons-material/EditNote';  
 
 const columns = [
   {
@@ -28,7 +28,8 @@ const columns = [
   },
   {
     field: 'quantity',
-    headerName: 'Item Quantity Needed',
+    headerName: 'Packages Needed',
+    description: 'This is the number of packages to purchase, not individual items.',
     type: 'number',
     flex: 1,
     editable: true,
@@ -647,6 +648,9 @@ export default function ShoppingListPage() {
               <Typography variant="h6" gutterBottom>
                 Low Inventory
               </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                The quantity shown is the number of packages to purchase, not individual items.
+              </Typography>
               <DroppableContainer id="shoppingList" columns={columns}>
                 {rows.map((row) => (
                   <DraggableRow key={row.id} row={row} />
@@ -669,6 +673,9 @@ export default function ShoppingListPage() {
             >
               <Typography variant="h6" gutterBottom>
                 Shopping List
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                The quantity shown is the number of packages to purchase, not individual items.
               </Typography>
               <DroppableContainer id="customList" columns={columns}>
                 {customList.map((item) => (
