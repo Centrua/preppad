@@ -1,3 +1,4 @@
+
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import {
@@ -31,6 +32,7 @@ export default function RecipePage() {
     unitCost: '',
     ingredients: [{ inventoryId: '', quantity: '', unit: '' }],
     categories: [],
+    modifiers: [], // <-- new
   });
   const [recipes, setRecipes] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -55,51 +57,56 @@ export default function RecipePage() {
   // Ref for scrolling to top
   const topRef = useRef(null);
 
+  // Helper to parse modifiers for a recipe object
+  function parseRecipeModifiers(r) {
+    let modifiers = r.modifiers;
+    if (typeof modifiers === 'string') {
+      try {
+        modifiers = JSON.parse(modifiers);
+      } catch (e) {
+        modifiers = [];
+      }
+    }
+    if (Array.isArray(modifiers)) {
+      modifiers = modifiers.map(m => {
+        if (typeof m === 'string') {
+          try {
+            return JSON.parse(m);
+          } catch (e) {
+            return null;
+          }
+        }
+        return m;
+      }).filter(Boolean);
+    }
+    return r.itemName ? { ...r, title: r.itemName, modifiers } : { ...r, modifiers };
+  }
+
+
   // Fetch recipes on mount
   useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/recipes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          // Map itemName to title if present
-          const mapped = Array.isArray(data)
-            ? data.map(r => r.itemName ? { ...r, title: r.itemName } : r)
-            : data;
-          setRecipes(mapped);
-        } else {
-          console.error('Failed to fetch recipes');
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
     fetchRecipes();
   }, [API_BASE]);
 
   const fetchRecipes = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${API_BASE}/recipes`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      // Map itemName to title if present
-      const mapped = Array.isArray(data)
-        ? data.map(r => r.itemName ? { ...r, title: r.itemName } : r)
-        : data;
-      setRecipes(mapped);
-    } else {
-      console.error('Failed to fetch recipes');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/recipes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = Array.isArray(data)
+          ? data.map(parseRecipeModifiers)
+          : data;
+        setRecipes(mapped);
+      } else {
+        console.error('Failed to fetch recipes');
+      }
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   // Only use /ingredients endpoint for dropdown
   useEffect(() => {
@@ -145,6 +152,26 @@ export default function RecipePage() {
     setForm({ ...form, ingredients: updatedIngredients });
   };
 
+  // Modifier handlers
+  const handleModifierChange = (index, field, value) => {
+    const updatedModifiers = [...form.modifiers];
+    updatedModifiers[index][field] = value;
+    setForm({ ...form, modifiers: updatedModifiers });
+  };
+
+  const addModifierRow = () => {
+    setForm({
+      ...form,
+      modifiers: [...(form.modifiers || []), { name: '', ingredientId: '', quantity: '' }],
+    });
+  };
+
+  const handleRemoveModifier = (index) => {
+    const updatedModifiers = [...form.modifiers];
+    updatedModifiers.splice(index, 1);
+    setForm({ ...form, modifiers: updatedModifiers });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.unitCost.toString().trim()) {
@@ -177,6 +204,12 @@ export default function RecipePage() {
           ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
           ingredientsUnit: form.ingredients.map(i => i.unit),
           categories: form.categories,
+          // Add modifiers to the payload if needed for backend
+          modifiers: form.modifiers.map(m => ({
+            name: m.name,
+            ingredientId: m.ingredientId,
+            quantity: parseFloat(m.quantity),
+          })),
         }),
       });
 
@@ -205,13 +238,15 @@ export default function RecipePage() {
         ...normalizedRecipe,
         ingredients: combineIngredients(normalizedRecipe),
       };
+      // Parse modifiers for the updated/created recipe
+      const normalizedWithModifiers = parseRecipeModifiers(normalizedWithIngredients);
 
       if (editingId) {
         setRecipes((prev) =>
-          prev.map((r) => (r.id === editingId ? normalizedWithIngredients : r))
+          prev.map((r) => (r.id === editingId ? normalizedWithModifiers : r))
         );
       } else {
-        setRecipes((prev) => [...prev, normalizedWithIngredients]);
+        setRecipes((prev) => [...prev, normalizedWithModifiers]);
       }
 
       await fetchRecipes();
@@ -221,6 +256,7 @@ export default function RecipePage() {
         unitCost: '',
         ingredients: [{ title: '', quantity: '', unit: '' }],
         categories: [],
+        modifiers: [], // <-- reset modifiers
       });
       setEditingIndex(null);
       setEditingId(null);
@@ -258,6 +294,7 @@ export default function RecipePage() {
           unitCost: '',
           ingredients: [{ title: '', quantity: '', unit: '' }],
           categories: [],
+          modifiers: [], // <-- reset modifiers
         });
       }
     } catch (err) {
@@ -297,6 +334,12 @@ export default function RecipePage() {
         };
       }),
       categories: recipe.categories || [],
+      // Populate modifiers if present
+      modifiers: recipe.modifiers ? recipe.modifiers.map(mod => ({
+        name: mod.name,
+        ingredientId: mod.ingredientId || '',
+        quantity: mod.quantity || '',
+      })) : [],
     });
   };
 
@@ -308,6 +351,7 @@ export default function RecipePage() {
     unitCost: '',
     ingredients: [{ title: '', quantity: '', unit: '' }],
     categories: [],
+    modifiers: [], // <-- reset modifiers
     });
   };
 
@@ -698,11 +742,76 @@ export default function RecipePage() {
               })}
               <Button
                 onClick={addIngredientRow}
-                variant="contained"
-                color="inherit"
-                sx={{ mt: 1 }}
+                variant="outlined"
+                sx={{ mt: 2 }}
               >
                 Add Ingredient
+              </Button>
+            </Box>
+
+            {/* Modifiers Section */}
+            <Box mt={4}>
+              <Typography variant="h6" gutterBottom>
+                Modifiers
+              </Typography>
+              {(form.modifiers || []).map((modifier, index) => (
+                <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: 1 }}>
+                  <Grid item xs={4}>
+                    <TextField
+                      fullWidth
+                      label="Modifier Name"
+                      value={modifier.name}
+                      onChange={e => handleModifierChange(index, 'name', e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={4}>
+                    <FormControl fullWidth required>
+                      <InputLabel id={`modifier-ingredient-label-${index}`}>Ingredient</InputLabel>
+                      <Select
+                        labelId={`modifier-ingredient-label-${index}`}
+                        value={modifier.ingredientId}
+                        label="Ingredient"
+                        onChange={e => handleModifierChange(index, 'ingredientId', e.target.value)}
+                      >
+                        {ingredientsList.map((ing) => (
+                          <MenuItem key={ing.id} value={ing.id}>
+                            {ing.itemName}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      fullWidth
+                      label="Quantity"
+                      type="number"
+                      value={modifier.quantity}
+                      onChange={e => handleModifierChange(index, 'quantity', e.target.value)}
+                      inputProps={{ step: 'any', min: 0 }}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleRemoveModifier(index)}
+                      disabled={form.modifiers.length === 0}
+                      size="small"
+                      aria-label="delete modifier"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              ))}
+              <Button
+                onClick={addModifierRow}
+                variant="outlined"
+                sx={{ mt: 2 }}
+              >
+                Add Modifier
               </Button>
             </Box>
 
@@ -754,13 +863,16 @@ export default function RecipePage() {
                     </Grid>
                   </Grid>
                   {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
-                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
-                      {recipe.modifiers.map((mod, i) => (
-                        <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
-                          {mod}
-                        </Box>
-                      ))}
+                      {recipe.modifiers.map((mod, i) => {
+                        const ingredientName = ingredientsList.find(ing => ing.id === mod.ingredientId)?.itemName || mod.ingredientId;
+                        return (
+                          <Typography key={i} variant="body2" sx={{ ml: 2 }}>
+                            Name: {mod.name} | Ingredient: {ingredientName} | Quantity: {mod.quantity}
+                          </Typography>
+                        );
+                      })}
                     </Box>
                   )}
                   <Typography variant="subtitle1" sx={{ mt: 1 }}>
@@ -890,13 +1002,16 @@ export default function RecipePage() {
                   </Grid>
                 </Grid>
                 {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
-                  <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
-                    {recipe.modifiers.map((mod, i) => (
-                      <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
-                        {mod}
-                      </Box>
-                    ))}
+                    {recipe.modifiers.map((mod, i) => {
+                      const ingredientName = ingredientsList.find(ing => ing.id === mod.ingredientId)?.itemName || mod.ingredientId;
+                      return (
+                        <Typography key={i} variant="body2" sx={{ ml: 2 }}>
+                          Name: {mod.name} | Ingredient: {ingredientName} | Quantity: {mod.quantity}
+                        </Typography>
+                      );
+                    })}
                   </Box>
                 )}
                 <Typography variant="subtitle1" sx={{ mt: 1 }}>
