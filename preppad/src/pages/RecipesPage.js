@@ -654,6 +654,7 @@ export default function RecipePage() {
                           onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
                         >
                           {[
+                            'Count',
                             'Cups',
                             'Dry Ounces',
                             'Fluid Ounces',
