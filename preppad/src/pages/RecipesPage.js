@@ -1,28 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Layout from '../components/Layout';
-import RecipesImport from '../components/RecipesImport';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Grid,
-  InputAdornment,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import Layout from '../components/Layout';
+import RecipesImport from '../components/RecipesImport';
 
 export default function RecipePage() {
   const [form, setForm] = useState({
@@ -854,12 +854,16 @@ export default function RecipePage() {
           );
         })}
         {/* Show recipes with no category */}
-        {mainRecipes.filter(r => !r.categories || r.categories.length === 0).length > 0 && (
+        {mainRecipes.filter(r => !r.categories || r.categories.length === 0)
+          .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
           <Box sx={{ mb: 4 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
               Uncategorized
             </Typography>
-            {mainRecipes.filter(r => !r.categories || r.categories.length === 0).map((recipe, index) => (
+            {mainRecipes
+              .filter(r => !r.categories || r.categories.length === 0)
+              .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((recipe, index) => (
               <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
                 <Grid container justifyContent="space-between" alignItems="center">
                   <Grid item>
