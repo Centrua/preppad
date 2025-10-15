@@ -1,28 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Layout from '../components/Layout';
-import RecipesImport from '../components/RecipesImport';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Grid,
-  InputAdornment,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import Layout from '../components/Layout';
+import RecipesImport from '../components/RecipesImport';
 
 export default function RecipePage() {
   const [form, setForm] = useState({
@@ -325,18 +325,6 @@ export default function RecipePage() {
   const handleCategoryChange = (event) => {
     setForm({ ...form, categories: event.target.value });
   };
-
-  const unitOptions = [
-    'Count',
-    'Cups',
-    'Dry Ounces',
-    'Fluid Ounces',
-    'Pints',
-    'Quarts',
-    'Slices',
-    'Tablespoons',
-    'Teaspoons',
-  ].sort();
 
   // Handler to add a variation (clone recipe with a new title and POST to backend)
   const handleAddVariation = async (recipe) => {
@@ -670,7 +658,13 @@ export default function RecipePage() {
                             'Dry Ounces',
                             'Fluid Ounces',
                             'Gallons',
+                            'Grams',
+                            'Kilograms',
+                            'Liters',
+                            'Milligrams',
+                            'Milliliters',
                             'Pints',
+                            'Pounds',
                             'Quarts',
                             'Slices',
                             'Tablespoons',
