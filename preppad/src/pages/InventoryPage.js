@@ -169,38 +169,8 @@ export default function InventoryPage() {
       // 🔁 Trigger backend shopping list logic for updated items
       if (editingItem) {
         if ((form.max - form.quantityInStock) > 0) {
-        try {
-          const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
-          });
-
-          if (!updateListRes.ok) {
-            const errorData = await updateListRes.json();
-            console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
-          }
-        } catch (err) {
-          console.error('❌ Error calling /shopping-list/:id:', err);
-        }
-      }
-      } else {
-        try {
-          const itemIdRes = await fetch(`${API_BASE}/ingredients/item-id?itemName=${form.itemName}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (itemIdRes.ok) {
-            const { itemId } = await itemIdRes.json();
-
-            const updateListRes = await fetch(`${API_BASE}/shopping-list/${itemId}/shopping-list`, {
+          try {
+            const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -212,6 +182,38 @@ export default function InventoryPage() {
             if (!updateListRes.ok) {
               const errorData = await updateListRes.json();
               console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+            }
+          } catch (err) {
+            console.error('❌ Error calling /shopping-list/:id:', err);
+          }
+        }
+      } else {
+        try {
+          const itemIdRes = await fetch(`${API_BASE}/ingredients/item-id?itemName=${form.itemName}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (itemIdRes.ok) {
+            if ((form.max - form.quantityInStock) > 0) {
+              const { itemId } = await itemIdRes.json();
+
+              const updateListRes = await fetch(`${API_BASE}/shopping-list/${itemId}/shopping-list`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
+              });
+
+              if (!updateListRes.ok) {
+                const errorData = await updateListRes.json();
+                console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+              }
             }
           } else {
             const errorData = await itemIdRes.json();
