@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
+import RecipesImport from '../components/RecipesImport';
 import {
   Box,
   TextField,
@@ -724,6 +725,7 @@ export default function RecipePage() {
         </Paper>
 
         {/* Recipes List */}
+        <RecipesImport API_BASE={API_BASE} token={localStorage.getItem('token')} fetchRecipes={fetchRecipes} />
         <Typography variant="h5" gutterBottom>
           Recipes
         </Typography>
