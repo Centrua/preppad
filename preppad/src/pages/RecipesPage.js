@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import Layout from '../components/Layout';
+import RecipeImageImport from '../components/RecipeImageImport';
 import RecipesImport from '../components/RecipesImport';
 
 export default function RecipePage() {
@@ -554,6 +555,9 @@ export default function RecipePage() {
         <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
           Disclaimer: Recipes should only contain base ingredients. Do not include additional or optional ingredients in the recipe.
         </Typography>
+
+        {/* Image Import & OCR */}
+        <RecipeImageImport />
 
         {/* Form */}
         <Paper elevation={3} sx={{ p: 4, mb: 5 }}>
