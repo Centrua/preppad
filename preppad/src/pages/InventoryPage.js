@@ -1,3 +1,4 @@
+import InventoryImport from '../components/InventoryImport';
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import {
@@ -256,6 +257,7 @@ export default function InventoryPage() {
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
           {/* Add Inventory Item Section */}
           <Box sx={{ width: '33%' }}>
+          <InventoryImport API_BASE={API_BASE} token={token} fetchItems={fetchItems} />
             <Typography variant="h5" gutterBottom>
               {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
             </Typography>
