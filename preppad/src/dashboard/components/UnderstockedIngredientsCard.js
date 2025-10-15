@@ -53,7 +53,7 @@ export default function UnderstockedIngredientsCard() {
                         {understocked.map((item) => (
                             <li key={item.id}>
                                 <Typography variant="body2" align="center">
-                                    {item.itemName} ({item.quantityInStock} / max {item.max})
+                                    {item.itemName} ({Math.ceil(Number(item.quantityInStock))} / max {Math.ceil(Number(item.max))})
                                 </Typography>
                             </li>
                         ))}
