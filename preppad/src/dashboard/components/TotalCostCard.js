@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import { useEffect, useState } from 'react';
 
 export default function TotalCostCard() {
   const [startDate, setStartDate] = useState('');
@@ -102,7 +101,7 @@ export default function TotalCostCard() {
         <Typography component="h2" variant="subtitle2" gutterBottom align="center">
           Total Cost
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <Box sx={{ display: 'flex', gap: 3, mt: 3, width: '100%' }}>
           <TextField
             label="Start Date"
             type="date"
