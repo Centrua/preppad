@@ -434,7 +434,6 @@ export default function PendingPurchasesPage() {
                     fullWidth
                     margin="normal"
                     placeholder="Search by item name"
-                    sx={{ width: '300px', marginLeft: 'auto' }}
                   />
 
                 <TableContainer component={Paper}>
@@ -529,11 +528,12 @@ export default function PendingPurchasesPage() {
             )}
         {/* Confirm Inventory Update Dialog */}
         <Dialog open={confirmInventoryDialogOpen} onClose={() => setConfirmInventoryDialogOpen(false)}>
-          <DialogTitle>Are you sure?</DialogTitle>
+          <DialogTitle>Confirm Purchase</DialogTitle>
           <DialogContent>
             <Typography>
-              This will update the inventory and is <b>irreversible</b>.
+              Are you sure you want to confirm this purchase?
             </Typography>
+            <Typography>This will update the inventory and is <b>irreversible</b>.</Typography>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setConfirmInventoryDialogOpen(false)} color="inherit">Cancel</Button>
@@ -560,6 +560,7 @@ export default function PendingPurchasesPage() {
           <DialogTitle>Confirm Deletion</DialogTitle>
           <DialogContent>
             <Typography>Are you sure you want to delete this purchase?</Typography>
+            <Typography>The items and their quantities will go back onto the shopping list.</Typography>
           </DialogContent>
           <DialogActions>
             <Button onClick={closeDeleteDialog} color="inherit">Cancel</Button>
