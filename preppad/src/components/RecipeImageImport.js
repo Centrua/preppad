@@ -5,7 +5,6 @@ import Tesseract from 'tesseract.js';
 
 export default function RecipeImageImport({ onExtractedText, onRecipeInfo, fetchRecipes }) {
   const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
   const [ocrText, setOcrText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,11 +36,9 @@ export default function RecipeImageImport({ onExtractedText, onRecipeInfo, fetch
       setError('');
       // Create preview
       const reader = new window.FileReader();
-      reader.onload = (ev) => setImagePreview(ev.target.result);
       reader.readAsDataURL(file);
     } else {
       setImage(null);
-      setImagePreview(null);
     }
   };
 
@@ -240,14 +237,6 @@ export default function RecipeImageImport({ onExtractedText, onRecipeInfo, fetch
       <Button variant="contained" sx={{ ml: 2 }} onClick={handleExtractAndSend} disabled={!image || loading}>
         Import Recipe
       </Button>
-      {imagePreview && (
-        <Box sx={{ mt: 2, mb: 2 }}>
-          <Typography variant="subtitle2">Image Preview:</Typography>
-          <Box sx={{ border: '1px solid #eee', borderRadius: 1, overflow: 'hidden', maxWidth: 400 }}>
-            <img src={imagePreview} alt="Preview" style={{ width: '100%', display: 'block' }} />
-          </Box>
-        </Box>
-      )}
       {loading && <CircularProgress size={24} sx={{ ml: 2 }} />}
       {error && <Typography color="error" sx={{ mt: 1 }}>{error}</Typography>}
       <Snackbar
