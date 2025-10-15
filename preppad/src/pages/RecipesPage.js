@@ -753,6 +753,16 @@ export default function RecipePage() {
                       <Typography variant="h6">{recipe.title}</Typography>
                     </Grid>
                   </Grid>
+                  {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
+                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                      {recipe.modifiers.map((mod, i) => (
+                        <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
+                          {mod}
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
                   <Typography variant="subtitle1" sx={{ mt: 1 }}>
                     Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
                   </Typography>
@@ -809,6 +819,16 @@ export default function RecipePage() {
                         return (
                           <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
                             <Typography variant="subtitle1">{variation.title}</Typography>
+                            {Array.isArray(variation.modifiers) && variation.modifiers.length > 0 && (
+                              <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                                {variation.modifiers.map((mod, i) => (
+                                  <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
+                                    {mod}
+                                  </Box>
+                                ))}
+                              </Box>
+                            )}
                             <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
                             {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
                               if (!ing) return null;
@@ -869,6 +889,16 @@ export default function RecipePage() {
                     <Typography variant="h6">{recipe.title}</Typography>
                   </Grid>
                 </Grid>
+                {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
+                  <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                    {recipe.modifiers.map((mod, i) => (
+                      <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
+                        {mod}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
                 <Typography variant="subtitle1" sx={{ mt: 1 }}>
                   Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
                 </Typography>
@@ -924,6 +954,16 @@ export default function RecipePage() {
                         return (
                           <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
                             <Typography variant="subtitle1">{variation.title}</Typography>
+                            {Array.isArray(variation.modifiers) && variation.modifiers.length > 0 && (
+                              <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                                {variation.modifiers.map((mod, i) => (
+                                  <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
+                                    {mod}
+                                  </Box>
+                                ))}
+                              </Box>
+                            )}
                             <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
                             {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
                               if (!ing) return null;
