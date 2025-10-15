@@ -89,18 +89,6 @@ export default function InventoryPage() {
       setDuplicateDialogOpen(true);
       return;
     }
-    if (Number(form.quantityInStock) > Number(form.max)) {
-      setFormError('Quantity in Stock cannot exceed Max.');
-      return;
-    }
-    if (
-      form.baseUnit === 'Whole/Package' &&
-      (!conversionRate || isNaN(Number(conversionRate)) || Number(conversionRate) <= 0)
-    ) {
-      setFormError('Please specify how many of the tracked unit(s) are in a Whole/Package.');
-      return;
-    }
-    //
     const method = editingItem ? 'PUT' : 'POST';
     const endpoint = editingItem
       ? `${API_BASE}/ingredients/${editingItem.id}`
@@ -118,7 +106,7 @@ export default function InventoryPage() {
           baseUnit: form.baseUnit,
           quantityInStock: form.quantityInStock,
           max: form.max,
-          conversionRate: form.baseUnit === 'Whole/Package' ? Number(conversionRate) : null,
+          conversionRate: conversionRate ? Number(conversionRate) : null,
         }),
       });
 
@@ -127,7 +115,6 @@ export default function InventoryPage() {
         throw new Error(errData.error || 'Failed to save inventory');
       }
 
-      // 🔁 Trigger backend shopping list logic for updated items
       if (editingItem) {
         if ((form.max - form.quantityInStock) > 0) {
           setOnAddToShoppingListConfirm(() => async () => {
@@ -146,7 +133,7 @@ export default function InventoryPage() {
                 console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
               }
             } catch (err) {
-              console.error('❌ Error calling /shopping-list/:id:', err);
+              console.error('Error calling /shopping-list/:id:', err);
             }
           });
           setAddToShoppingListDialogOpen(true);
@@ -187,7 +174,7 @@ export default function InventoryPage() {
             console.warn('Failed to get item ID:', errorData.error || 'Unknown error');
           }
         } catch (err) {
-          console.error('❌ Error calling /shopping-list/:id:', err);
+          console.error('Error calling /shopping-list/:id:', err);
         }
       }
 
@@ -224,7 +211,6 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     try {
-      // Delete the inventory item
       const res = await fetch(`${API_BASE}/ingredients/${itemToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
@@ -235,7 +221,6 @@ export default function InventoryPage() {
         return;
       }
 
-      // Delete the corresponding item from the shopping list
       await fetch(`${API_BASE}/shopping-list/${itemToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
@@ -259,9 +244,11 @@ export default function InventoryPage() {
     });
   };
 
-  const filteredItems = items.filter((item) =>
-    item.itemName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = items
+    .filter((item) =>
+      item.itemName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.itemName.localeCompare(b.itemName));
 
   return (
     <Layout>
@@ -357,14 +344,7 @@ export default function InventoryPage() {
             </Paper>
           </Box>
 
-
-
-
           <Divider orientation="vertical" flexItem sx={{ width: '2px', bgcolor: 'divider' }} />
-
-
-
-
 
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 2 }}>
@@ -386,9 +366,9 @@ export default function InventoryPage() {
                   <TableRow sx={{ borderBottom: '1px solid #ccc' }}>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Item</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Base Unit</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Number in Whole/Package</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Qty In Stock</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Max</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Units per Package</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Packages In Stock</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Max Packages Desired</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -398,9 +378,7 @@ export default function InventoryPage() {
                       <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.itemName}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.baseUnit}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>
-                        {item.baseUnit !== 'Whole/Package'
-                          ? 'N/A'
-                          : item.conversionRate || 'Not found'}
+                        {item.conversionRate ? item.conversionRate : 'Not found'}
                       </TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{Math.ceil(Number(item.quantityInStock))}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.max}</TableCell>
