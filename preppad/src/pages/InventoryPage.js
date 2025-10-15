@@ -313,7 +313,7 @@ export default function InventoryPage() {
                   />
                   <TextField
                     name="quantityInStock"
-                    label="Quantity in Stock"
+                    label="Packages in Stock"
                     type="number"
                     value={form.quantityInStock}
                     onChange={handleChange}
@@ -322,7 +322,7 @@ export default function InventoryPage() {
                   />
                   <TextField
                     name="max"
-                    label="Max"
+                    label="Max Packages Desired"
                     type="number"
                     value={form.max}
                     onChange={handleChange}
