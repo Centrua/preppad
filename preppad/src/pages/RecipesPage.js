@@ -656,7 +656,17 @@ export default function RecipePage() {
                           label="Unit"
                           onChange={(e) => handleIngredientChange(index, 'unit', e.target.value)}
                         >
-                          {(inventoryItem?.allowedUnits || []).map((unit) => (
+                          {[
+                            'Cups',
+                            'Dry Ounces',
+                            'Fluid Ounces',
+                            'Gallons',
+                            'Pints',
+                            'Quarts',
+                            'Slices',
+                            'Tablespoons',
+                            'Teaspoons',
+                          ].sort().map((unit) => (
                             <MenuItem key={unit} value={unit}>
                               {unit}
                             </MenuItem>

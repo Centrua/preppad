@@ -25,26 +25,16 @@ import {
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
-const unitOptions = [
+const baseUnitOptions = [
   'Count',
-  'Cups',
-  'Dry Ounces',
-  'Fluid Ounces',
-  'Gallons',
-  'Whole/Package',
-  'Pints',
-  'Quarts',
-  'Slices',
-  'Tablespoons',
-  'Teaspoons',
-].sort();
+  'Ounce',
+];
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
     itemName: '',
-    allowedUnits: [],
     baseUnit: '',
     quantityInStock: '',
     max: '',
@@ -57,9 +47,8 @@ export default function InventoryPage() {
   const [formError, setFormError] = useState('');
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [allowedUnitsPrev, setAllowedUnitsPrev] = useState([]);
-  const [allowedUnitsDialogOpen, setAllowedUnitsDialogOpen] = useState(false);
-  const [pendingAllowedUnits, setPendingAllowedUnits] = useState(null);
+  const [addToShoppingListDialogOpen, setAddToShoppingListDialogOpen] = useState(false);
+  const [onAddToShoppingListConfirm, setOnAddToShoppingListConfirm] = useState(() => () => { });
 
   const token = localStorage.getItem('token');
 
@@ -79,36 +68,9 @@ export default function InventoryPage() {
     fetchItems();
   }, []);
 
-  useEffect(() => {
-    setAllowedUnitsPrev(form.allowedUnits);
-  }, []);
-
-  const handleAllowedUnitsChange = (newAllowedUnits) => {
-    setPendingAllowedUnits(newAllowedUnits);
-    setAllowedUnitsDialogOpen(true);
-  };
-
-  const confirmAllowedUnitsChange = () => {
-    setForm((prev) => ({ ...prev, allowedUnits: pendingAllowedUnits }));
-    setAllowedUnitsPrev(pendingAllowedUnits);
-    setAllowedUnitsDialogOpen(false);
-    setPendingAllowedUnits(null);
-  };
-
-  const cancelAllowedUnitsChange = () => {
-    setAllowedUnitsDialogOpen(false);
-    setPendingAllowedUnits(null);
-  };
 
   const handleChange = (e) => {
-    if (e.target.name === 'allowedUnits') {
-      const newAllowedUnits = e.target.value;
-      if (JSON.stringify(newAllowedUnits) !== JSON.stringify(allowedUnitsPrev)) {
-        handleAllowedUnitsChange(newAllowedUnits);
-      } else {
-        setForm({ ...form, allowedUnits: newAllowedUnits });
-      }
-    } else if (e.target.name === 'conversionRate') {
+    if (e.target.name === 'conversionRate') {
       setConversionRate(e.target.value);
     } else {
       setForm({ ...form, [e.target.name]: e.target.value });
@@ -153,7 +115,6 @@ export default function InventoryPage() {
         },
         body: JSON.stringify({
           itemName: form.itemName,
-          allowedUnits: form.allowedUnits,
           baseUnit: form.baseUnit,
           quantityInStock: form.quantityInStock,
           max: form.max,
@@ -169,23 +130,26 @@ export default function InventoryPage() {
       // 🔁 Trigger backend shopping list logic for updated items
       if (editingItem) {
         if ((form.max - form.quantityInStock) > 0) {
-          try {
-            const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
-            });
+          setOnAddToShoppingListConfirm(() => async () => {
+            try {
+              const updateListRes = await fetch(`${API_BASE}/shopping-list/${editingItem.id}/shopping-list`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
+              });
 
-            if (!updateListRes.ok) {
-              const errorData = await updateListRes.json();
-              console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+              if (!updateListRes.ok) {
+                const errorData = await updateListRes.json();
+                console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+              }
+            } catch (err) {
+              console.error('❌ Error calling /shopping-list/:id:', err);
             }
-          } catch (err) {
-            console.error('❌ Error calling /shopping-list/:id:', err);
-          }
+          });
+          setAddToShoppingListDialogOpen(true);
         }
       } else {
         try {
@@ -201,19 +165,22 @@ export default function InventoryPage() {
             if ((form.max - form.quantityInStock) > 0) {
               const { itemId } = await itemIdRes.json();
 
-              const updateListRes = await fetch(`${API_BASE}/shopping-list/${itemId}/shopping-list`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
-              });
+              setOnAddToShoppingListConfirm(() => async () => {
+                const updateListRes = await fetch(`${API_BASE}/shopping-list/${itemId}/shopping-list`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
+                });
 
-              if (!updateListRes.ok) {
-                const errorData = await updateListRes.json();
-                console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
-              }
+                if (!updateListRes.ok) {
+                  const errorData = await updateListRes.json();
+                  console.warn('Failed to update shopping list:', errorData.error || 'Unknown error');
+                }
+              });
+              setAddToShoppingListDialogOpen(true);
             }
           } else {
             const errorData = await itemIdRes.json();
@@ -226,7 +193,6 @@ export default function InventoryPage() {
 
       setForm({
         itemName: '',
-        allowedUnits: [],
         baseUnit: '',
         quantityInStock: '',
         max: '',
@@ -244,7 +210,6 @@ export default function InventoryPage() {
     setEditingItem(item);
     setForm({
       itemName: item.itemName,
-      allowedUnits: item.allowedUnits || [],
       baseUnit: item.baseUnit,
       quantityInStock: item.quantityInStock,
       max: item.max,
@@ -288,7 +253,6 @@ export default function InventoryPage() {
     setEditingItem(null);
     setForm({
       itemName: '',
-      allowedUnits: [],
       baseUnit: '',
       quantityInStock: '',
       max: '',
@@ -327,22 +291,6 @@ export default function InventoryPage() {
                     />
                   </FormControl>
                   <FormControl fullWidth required>
-                    <InputLabel id="allowed-units-label">Tracked Units</InputLabel>
-                    <Select
-                      labelId="allowed-units-label"
-                      name="allowedUnits"
-                      multiple
-                      value={form.allowedUnits}
-                      label="Tracked Units"
-                      onChange={handleChange}
-                      renderValue={(selected) => selected.join(', ')}
-                    >
-                      {unitOptions.map((unit) => (
-                        <MenuItem key={unit} value={unit}>
-                          {unit}
-                        </MenuItem>
-                      ))}
-                    </Select>
                   </FormControl>
                   <FormControl fullWidth required>
                     <InputLabel id="base-unit-label">Base Unit (for storage)</InputLabel>
@@ -353,24 +301,29 @@ export default function InventoryPage() {
                       label="Base Unit (for storage)"
                       onChange={handleChange}
                     >
-                      {unitOptions.map((unit) => (
+                      {baseUnitOptions.map((unit) => (
                         <MenuItem key={unit} value={unit}>
                           {unit}
                         </MenuItem>
                       ))}
                     </Select>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                      Example: Use <b>Count</b> for items like bread or eggs that can’t be easily measured in ounces.
+                    </Typography>
                   </FormControl>
-                  {form.baseUnit === 'Whole/Package' && (
-                    <TextField
-                      name="conversionRate"
-                      label={`How many slices are in a Whole/Package?`}
-                      type="number"
-                      value={conversionRate}
-                      onChange={handleChange}
-                      required
-                      inputProps={{ min: 1 }}
-                    />
-                  )}
+                  <TextField
+                    name="conversionRate"
+                    label={
+                      form.baseUnit === 'Count'
+                        ? 'How many of the count are in a package?'
+                        : 'How many ounces are in a package?'
+                    }
+                    type="number"
+                    value={conversionRate}
+                    onChange={handleChange}
+                    required
+                    inputProps={{ min: 1 }}
+                  />
                   <TextField
                     name="quantityInStock"
                     label="Quantity in Stock"
@@ -432,7 +385,6 @@ export default function InventoryPage() {
                 <TableHead>
                   <TableRow sx={{ borderBottom: '1px solid #ccc' }}>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Item</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Allowed Units</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Base Unit</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Number in Whole/Package</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Qty In Stock</TableCell>
@@ -444,7 +396,6 @@ export default function InventoryPage() {
                   {filteredItems.map(item => (
                     <TableRow key={item.id} sx={{ borderBottom: '1px solid #ccc' }}>
                       <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.itemName}</TableCell>
-                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{(item.allowedUnits || []).join(', ')}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.baseUnit}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>
                         {item.baseUnit !== 'Whole/Package'
@@ -512,19 +463,28 @@ export default function InventoryPage() {
           </DialogActions>
         </Dialog>
 
-        {/* Allowed Units Confirmation Dialog */}
-        <Dialog open={allowedUnitsDialogOpen} onClose={cancelAllowedUnitsChange}>
-          <DialogTitle>Confirm Allowed Units Change</DialogTitle>
+        <Dialog open={addToShoppingListDialogOpen} onClose={() => setAddToShoppingListDialogOpen(false)}>
+          <DialogTitle>Add to Shopping List?</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to change the allowed units? This may affect how this ingredient is tracked.
+              Do you want to add this item to the shopping list?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={cancelAllowedUnitsChange} color="inherit">Cancel</Button>
-            <Button onClick={confirmAllowedUnitsChange} color="primary" variant="contained">Confirm</Button>
+            <Button onClick={() => setAddToShoppingListDialogOpen(false)} color="inherit">No</Button>
+            <Button
+              onClick={() => {
+                setAddToShoppingListDialogOpen(false);
+                onAddToShoppingListConfirm();
+              }}
+              color="primary"
+              variant="contained"
+            >
+              Yes
+            </Button>
           </DialogActions>
         </Dialog>
+
       </Box>
     </Layout>
   );
