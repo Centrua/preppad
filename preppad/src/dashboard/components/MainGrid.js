@@ -3,9 +3,10 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Copyright from '../internals/components/Copyright';
 import ComingSoonCard from './ComingSoonCard';
+import CustomSyncCard from './CustomSyncCard';
 import OverstockedIngredientsCard from './OverstockedIngredientsCard';
-import UnderstockedIngredientsCard from './UnderstockedIngredientsCard';
 import TotalCostCard from './TotalCostCard';
+import UnderstockedIngredientsCard from './UnderstockedIngredientsCard';
 
 export default function MainGrid() {
   return (
@@ -22,6 +23,7 @@ export default function MainGrid() {
       >
         <ComingSoonCard />
       </Grid>
+
       <Grid
         container
         spacing={2}
@@ -30,6 +32,9 @@ export default function MainGrid() {
       >
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <TotalCostCard />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <CustomSyncCard />
         </Grid>
       </Grid>
 
