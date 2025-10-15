@@ -326,18 +326,6 @@ export default function RecipePage() {
     setForm({ ...form, categories: event.target.value });
   };
 
-  const unitOptions = [
-    'Count',
-    'Cups',
-    'Dry Ounces',
-    'Fluid Ounces',
-    'Pints',
-    'Quarts',
-    'Slices',
-    'Tablespoons',
-    'Teaspoons',
-  ].sort();
-
   // Handler to add a variation (clone recipe with a new title and POST to backend)
   const handleAddVariation = async (recipe) => {
     const variationTitle = prompt('Enter a name for the new variation:', recipe.title + ' Variation');
@@ -670,7 +658,13 @@ export default function RecipePage() {
                             'Dry Ounces',
                             'Fluid Ounces',
                             'Gallons',
+                            'Grams',
+                            'Kilograms',
+                            'Liters',
+                            'Milligrams',
+                            'Milliliters',
                             'Pints',
+                            'Pounds',
                             'Quarts',
                             'Slices',
                             'Tablespoons',
