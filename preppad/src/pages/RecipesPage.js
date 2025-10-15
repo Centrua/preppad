@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import {
   Box,
@@ -36,6 +36,7 @@ export default function RecipePage() {
   const [ingredientsList, setIngredientsList] = useState([]); // <-- new state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // State for add variation dialog
   const [addVariationDialogOpen, setAddVariationDialogOpen] = useState(false);
@@ -48,6 +49,9 @@ export default function RecipePage() {
   const [originalRecipeForDelete, setOriginalRecipeForDelete] = useState(null);
 
   const API_BASE = process.env.REACT_APP_API_BASE_URL; // adjust to your backend
+
+  // Ref for scrolling to top
+  const topRef = useRef(null);
 
   // Fetch recipes on mount
   useEffect(() => {
@@ -274,6 +278,9 @@ export default function RecipePage() {
 
   const editRecipe = (index) => {
     const recipe = recipes[index];
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
     setEditingIndex(index);
     setEditingId(recipe.id);
     setForm({
@@ -551,6 +558,7 @@ export default function RecipePage() {
   return (
     <Layout>
       <Box sx={{ p: 4 }}>
+        <div ref={topRef} />
         <Typography variant="h5" gutterBottom>
           Recipe Management
         </Typography>
@@ -719,8 +727,18 @@ export default function RecipePage() {
         <Typography variant="h5" gutterBottom>
           Recipes
         </Typography>
+        <TextField
+          label="Search Recipes"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Type to search by recipe name"
+          fullWidth
+          sx={{ mb: 3, maxWidth: 400 }}
+        />
         {categoryOptions.map((cat) => {
-          const catRecipes = mainRecipes.filter(r => (r.categories || []).includes(cat));
+          const catRecipes = mainRecipes
+            .filter(r => (r.categories || []).includes(cat))
+            .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()));
           if (catRecipes.length === 0) return null;
           return (
             <Box key={cat} sx={{ mb: 4 }}>
