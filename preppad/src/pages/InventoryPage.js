@@ -53,6 +53,9 @@ export default function InventoryPage() {
 
   const token = localStorage.getItem('token');
 
+
+
+
   const fetchItems = async () => {
     try {
       const res = await fetch(`${API_BASE}/ingredients`, {
@@ -70,6 +73,10 @@ export default function InventoryPage() {
   }, []);
 
 
+
+
+
+
   const handleChange = (e) => {
     if (e.target.name === 'conversionRate') {
       setConversionRate(e.target.value);
@@ -77,6 +84,13 @@ export default function InventoryPage() {
       setForm({ ...form, [e.target.name]: e.target.value });
     }
   };
+
+
+
+
+
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -179,6 +193,9 @@ export default function InventoryPage() {
         }
       }
 
+
+
+
       setForm({
         itemName: '',
         baseUnit: '',
@@ -194,6 +211,10 @@ export default function InventoryPage() {
     }
   };
 
+
+
+
+
   const handleEdit = (item) => {
     setEditingItem(item);
     setForm({
@@ -205,10 +226,22 @@ export default function InventoryPage() {
     setConversionRate(item.conversionRate || '');
   };
 
+
+
+
+
+
   const handleDeleteClick = (item) => {
     setItemToDelete(item);
     setConfirmOpen(true);
   };
+
+
+
+
+
+
+
 
   const confirmDelete = async () => {
     try {
@@ -235,6 +268,14 @@ export default function InventoryPage() {
     }
   };
 
+
+
+
+
+
+
+
+
   const handleCancel = () => {
     setEditingItem(null);
     setForm({
@@ -244,6 +285,12 @@ export default function InventoryPage() {
       max: '',
     });
   };
+
+
+
+
+
+
 
   const filteredItems = items
     .filter((item) =>
@@ -257,7 +304,7 @@ export default function InventoryPage() {
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
           {/* Add Inventory Item Section */}
           <Box sx={{ width: '33%' }}>
-          <InventoryImport API_BASE={API_BASE} token={token} fetchItems={fetchItems} />
+            <InventoryImport API_BASE={API_BASE} token={token} fetchItems={fetchItems} />
             <Typography variant="h5" gutterBottom>
               {editingItem ? 'Edit Inventory Item' : 'Add Inventory Item'}
             </Typography>
@@ -268,7 +315,7 @@ export default function InventoryPage() {
             )}
             <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
               <form onSubmit={handleSubmit}>
-                <Box display="flex" flexDirection="column" gap={2}>
+                <Box display="flex" flexDirection="column" gap={0.5}>
                   {/* Form fields */}
                   <FormControl fullWidth required>
                     <TextField
@@ -281,38 +328,38 @@ export default function InventoryPage() {
                   </FormControl>
                   <FormControl fullWidth required>
                   </FormControl>
-                  <FormControl fullWidth required>
-                    <InputLabel id="base-unit-label">Base Unit (for storage)</InputLabel>
-                    <Select
-                      labelId="base-unit-label"
-                      name="baseUnit"
-                      value={form.baseUnit}
-                      label="Base Unit (for storage)"
+                  <Box display="flex" flexDirection="row" gap={2}>
+                    <TextField
+                      name="conversionRate"
+                      label={
+                        form.baseUnit === 'Count'
+                          ? 'How many of the count are in a package?'
+                          : 'How many ounces are in a package?'
+                      }
+                      type="number"
+                      value={conversionRate}
                       onChange={handleChange}
-                    >
-                      {baseUnitOptions.map((unit) => (
-                        <MenuItem key={unit} value={unit}>
-                          {unit}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                      Example: Use <b>Count</b> for items like bread or eggs that can’t be easily measured in ounces.
-                    </Typography>
-                  </FormControl>
-                  <TextField
-                    name="conversionRate"
-                    label={
-                      form.baseUnit === 'Count'
-                        ? 'How many of the count are in a package?'
-                        : 'How many ounces are in a package?'
-                    }
-                    type="number"
-                    value={conversionRate}
-                    onChange={handleChange}
-                    required
-                    inputProps={{ min: 1, step: 'any' }}
-                  />
+                      required
+                      inputProps={{ min: 1, step: 'any' }}
+                      sx={{ flex: 1 }} // Allows the text field to take up remaining space
+                    />
+                    <FormControl sx={{ minWidth: 150, flexShrink: 0 }} required>
+                      <InputLabel id="base-unit-label">Count, Oz.</InputLabel>
+                      <Select
+                        labelId="base-unit-label"
+                        name="baseUnit"
+                        value={form.baseUnit}
+                        label="Base Unit (for storage)"
+                        onChange={handleChange}
+                      >
+                        {baseUnitOptions.map((unit) => (
+                          <MenuItem key={unit} value={unit}>
+                            {unit}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
                   <TextField
                     name="quantityInStock"
                     label="Packages in Stock"
@@ -344,7 +391,11 @@ export default function InventoryPage() {
                 </Box>
               </form>
             </Paper>
+            <Typography variant="body2" color="textSecondary">
+              Items are tracked in either <strong>COUNT</strong> or <strong>OUNCE</strong> to whole package.
+            </Typography>
           </Box>
+
 
           <Divider orientation="vertical" flexItem sx={{ width: '2px', bgcolor: 'divider' }} />
 
@@ -367,7 +418,6 @@ export default function InventoryPage() {
                 <TableHead>
                   <TableRow sx={{ borderBottom: '1px solid #ccc' }}>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Item</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Base Unit</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Units per Package</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Packages In Stock</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Max Packages Desired</TableCell>
@@ -378,9 +428,8 @@ export default function InventoryPage() {
                   {filteredItems.map(item => (
                     <TableRow key={item.id} sx={{ borderBottom: '1px solid #ccc' }}>
                       <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.itemName}</TableCell>
-                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.baseUnit}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>
-                        {item.conversionRate ? item.conversionRate : 'Not found'}
+                        {item.conversionRate ? `${item.conversionRate} ${item.baseUnit}` : 'Not found'}
                       </TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{Math.ceil(Number(item.quantityInStock))}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.max}</TableCell>
