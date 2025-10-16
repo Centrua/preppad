@@ -178,11 +178,14 @@ export default function RecipePage() {
       alert('Please fill out the recipe title and unit cost.');
       return;
     }
-    const invalidIngredient = form.ingredients.some(
-      (ing) => !ing.inventoryId || !ing.quantity.toString().trim() || !ing.unit
-    );
+    // Ingredients are optional. If any field in a row is filled, require all fields for that row.
+    const invalidIngredient = form.ingredients.some((ing) => {
+      const hasAny = (ing.inventoryId && ing.inventoryId.toString().trim()) || (ing.quantity && ing.quantity.toString().trim()) || (ing.unit && ing.unit.toString().trim());
+      const hasAll = ing.inventoryId && ing.quantity && ing.unit;
+      return hasAny && !hasAll;
+    });
     if (invalidIngredient) {
-      alert('Please fill out all ingredient fields: ingredient, quantity, and unit.');
+      alert('If filling an ingredient row, please provide ingredient, quantity, and unit. Otherwise leave the row empty.');
       return;
     }
     try {
@@ -191,6 +194,9 @@ export default function RecipePage() {
       const url = editingId
         ? `${API_BASE}/recipes/${editingId}`
         : `${API_BASE}/recipes`;
+      // Filter out empty ingredient rows before sending
+      const filteredIngredients = (form.ingredients || []).filter(ing => ing && ing.inventoryId && ing.quantity && ing.unit);
+
       const res = await fetch(url, {
         method,
         headers: {
@@ -200,9 +206,9 @@ export default function RecipePage() {
         body: JSON.stringify({
           itemName: form.title,
           unitCost: parseFloat(form.unitCost),
-          ingredients: form.ingredients.map(i => i.inventoryId),
-          ingredientsQuantity: form.ingredients.map(i => parseFloat(i.quantity)),
-          ingredientsUnit: form.ingredients.map(i => i.unit),
+          ingredients: filteredIngredients.map(i => i.inventoryId),
+          ingredientsQuantity: filteredIngredients.map(i => parseFloat(i.quantity)),
+          ingredientsUnit: filteredIngredients.map(i => i.unit),
           categories: form.categories,
           // Add modifiers to the payload if needed for backend
           modifiers: form.modifiers.map(m => ({
@@ -665,7 +671,7 @@ export default function RecipePage() {
                 return (
                   <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: 1 }}>
                     <Grid item xs={4}>
-                      <FormControl fullWidth required sx={{ minWidth: 200, maxWidth: 200 }}>
+                      <FormControl fullWidth sx={{ minWidth: 200, maxWidth: 200 }}>
                         <InputLabel id={`ingredient-inventory-label-${index}`}>Ingredient</InputLabel>
                         <Select
                           labelId={`ingredient-inventory-label-${index}`}
@@ -689,11 +695,10 @@ export default function RecipePage() {
                         value={ingredient.quantity}
                         onChange={(e) => handleIngredientChange(index, 'quantity', e.target.value)}
                         inputProps={{ step: 'any', min: 0 }}
-                        required
                       />
                     </Grid>
                     <Grid item xs={3}>
-                      <FormControl fullWidth required sx={{ minWidth: 200, maxWidth: 200 }}>
+                      <FormControl fullWidth sx={{ minWidth: 200, maxWidth: 200 }}>
                         <InputLabel id={`ingredient-unit-label-${index}`}>Unit</InputLabel>
                         <Select
                           labelId={`ingredient-unit-label-${index}`}
@@ -730,7 +735,6 @@ export default function RecipePage() {
                       <IconButton
                         color="error"
                         onClick={() => handleRemoveIngredient(index)}
-                        disabled={form.ingredients.length === 1}
                         size="small"
                         aria-label="delete ingredient"
                       >
