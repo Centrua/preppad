@@ -391,7 +391,11 @@ export default function InventoryPage() {
                 </Box>
               </form>
             </Paper>
+            <Typography variant="body2" color="textSecondary">
+              Items are tracked in either <strong>COUNT</strong> or <strong>OUNCE</strong> to whole package.
+            </Typography>
           </Box>
+
 
           <Divider orientation="vertical" flexItem sx={{ width: '2px', bgcolor: 'divider' }} />
 
@@ -414,7 +418,6 @@ export default function InventoryPage() {
                 <TableHead>
                   <TableRow sx={{ borderBottom: '1px solid #ccc' }}>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Item</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Base Unit</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Units per Package</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Packages In Stock</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>Max Packages Desired</TableCell>
@@ -425,9 +428,8 @@ export default function InventoryPage() {
                   {filteredItems.map(item => (
                     <TableRow key={item.id} sx={{ borderBottom: '1px solid #ccc' }}>
                       <TableCell sx={{ fontWeight: 'bold', borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.itemName}</TableCell>
-                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.baseUnit}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>
-                        {item.conversionRate ? item.conversionRate : 'Not found'}
+                        {item.conversionRate ? `${item.conversionRate} ${item.baseUnit}` : 'Not found'}
                       </TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{Math.ceil(Number(item.quantityInStock))}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.max}</TableCell>
