@@ -233,10 +233,37 @@ export default function RecipeImageImport({ onExtractedText, onRecipeInfo, fetch
       <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
         Disclaimer: For best results, please ensure the image is upright (not sideways or upside down).
       </Typography>
-      <input type="file" accept="image/*" onChange={handleImageChange} />
-      <Button variant="contained" sx={{ ml: 2 }} onClick={handleExtractAndSend} disabled={!image || loading}>
+      <input
+        accept="image/*"
+        id="recipe-image-upload"
+        type="file"
+        style={{ display: 'none' }}
+        onChange={handleImageChange}
+      />
+      <label htmlFor="recipe-image-upload">
+        <Button variant="outlined" component="span">
+          Choose Image
+        </Button>
+      </label>
+      <Button
+        variant="contained"
+        sx={{
+          ml: 2,
+          '&.Mui-disabled': {
+            backgroundColor: '#e0e0e0',
+            color: '#888',
+          },
+        }}
+        onClick={handleExtractAndSend}
+        disabled={!image || loading}
+      >
         Import Recipe
       </Button>
+      {image && (
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          Selected: {image.name}
+        </Typography>
+      )}
       {loading && <CircularProgress size={24} sx={{ ml: 2 }} />}
       {error && <Typography color="error" sx={{ mt: 1 }}>{error}</Typography>}
       <Snackbar
