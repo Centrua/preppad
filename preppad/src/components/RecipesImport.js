@@ -10,6 +10,27 @@ export default function RecipesImport({ API_BASE, token, fetchRecipes }) {
     fileInputRef.current?.click();
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'recipe title',
+      'unit cost',
+      'ingredient',
+      'quantity',
+      'unit',
+    ];
+    const sampleRow = ['Pancakes', '2.50', 'Flour', '1.5', 'Cups'];
+    const csvContent = `${headers.join(',')}` + '\n' + `${sampleRow.join(',')}` + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'recipes_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -117,8 +138,11 @@ export default function RecipesImport({ API_BASE, token, fetchRecipes }) {
 
   return (
     <>
-      <Button variant="outlined" onClick={handleImportClick} sx={{ mb: 2 }}>
+      <Button variant="outlined" onClick={handleImportClick} sx={{ mb: 2, mr: 2 }}>
         Import Recipes CSV
+      </Button>
+      <Button variant="outlined" color="primary" onClick={handleDownloadTemplate} sx={{ mb: 2 }}>
+        Download Template
       </Button>
       <input
         type="file"

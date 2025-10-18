@@ -2,12 +2,34 @@ import React, { useRef } from 'react';
 import Papa from 'papaparse';
 import { Button } from '@mui/material';
 
+
 export default function InventoryImport({ API_BASE, token, fetchItems }) {
   const fileInputRef = useRef();
 
   const handleImportClick = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
     fileInputRef.current?.click();
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'item name',
+      'base unit',
+      'units per package',
+      'packages in stock',
+      'max packages desired',
+    ];
+    const sampleRow = ['Coffee Beans', 'Ounce', '16', '2.5', '10'];
+    const csvContent = `${headers.join(',')}` + '\n' + `${sampleRow.join(',')}` + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'inventory_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleFileChange = async (e) => {
@@ -77,8 +99,11 @@ export default function InventoryImport({ API_BASE, token, fetchItems }) {
 
   return (
     <>
-      <Button variant="outlined" onClick={handleImportClick} sx={{ mb: 2 }}>
+      <Button variant="outlined" onClick={handleImportClick} sx={{ mb: 2, mr: 2 }}>
         Import CSV
+      </Button>
+      <Button variant="outlined" color="primary" onClick={handleDownloadTemplate} sx={{ mb: 2 }}>
+        Download Template
       </Button>
       <input
         type="file"
