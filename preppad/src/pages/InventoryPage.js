@@ -432,7 +432,7 @@ export default function InventoryPage() {
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>
                         {item.conversionRate ? `${item.conversionRate} ${item.baseUnit}` : 'Not found'}
                       </TableCell>
-                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{Math.ceil(Number(item.quantityInStock))}</TableCell>
+                      <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{Number(item.quantityInStock).toFixed(2).replace(/\.00$/, '')}</TableCell>
                       <TableCell sx={{ borderRight: '1px solid #ccc', borderBottom: '1px solid #ccc' }}>{item.max}</TableCell>
                       <TableCell sx={{ borderBottom: '1px solid #ccc' }}>
                         <Button size="small" onClick={() => handleEdit(item)}>
