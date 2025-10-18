@@ -935,6 +935,7 @@ export default function RecipePage() {
                   </Paper>
                 ))}
               </Box>
+              
             </Paper>
           );
         })}
