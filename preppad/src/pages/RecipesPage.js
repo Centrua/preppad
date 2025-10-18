@@ -488,7 +488,11 @@ export default function RecipePage() {
 
   // Only show recipes that are not listed as a variation in any recipe's variations array
   const allVariationIds = recipes.flatMap(r => r.variations || []);
-  const mainRecipes = recipes.filter(r => !allVariationIds.includes(r.id));
+  // Sort recipes alphabetically by title
+  const mainRecipes = recipes
+    .filter(r => !allVariationIds.includes(r.id))
+    .slice() // copy array
+    .sort((a, b) => (a.title || '').localeCompare(b.title || ''));
 
   // Handler to open add variation dialog
   const openAddVariationDialog = (recipe) => {
@@ -679,11 +683,14 @@ export default function RecipePage() {
                           label="Ingredient"
                           onChange={(e) => handleIngredientChange(index, 'inventoryId', e.target.value)}
                         >
-                          {ingredientsList.map((ing) => (
-                            <MenuItem key={ing.id} value={ing.id}>
-                              {ing.itemName}
-                            </MenuItem>
-                          ))}
+                          {ingredientsList
+                            .slice() // copy array
+                            .sort((a, b) => (a.itemName || '').localeCompare(b.itemName || ''))
+                            .map((ing) => (
+                              <MenuItem key={ing.id} value={ing.id}>
+                                {ing.itemName}
+                              </MenuItem>
+                            ))}
                         </Select>
                       </FormControl>
                     </Grid>
