@@ -1014,7 +1014,7 @@ export default function RecipePage() {
                     </Box>
 
                     {/* Show variations as sub-recipes */}
-                    {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
+                  {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
                     <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
                       {recipe.variations.map(variationId => {
