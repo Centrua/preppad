@@ -71,14 +71,38 @@ export default function RecipesImport({ API_BASE, token, fetchRecipes }) {
           const variations = [];
           const payload = { itemName, unitCost, ingredients: ingredientsArr, ingredientsQuantity, ingredientsUnit, categories, variations };
           try {
-            await fetch(`${API_BASE}/recipes`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify(payload),
+            // Check if recipe exists (case-insensitive match by itemName)
+            const getRes = await fetch(`${API_BASE}/recipes`, {
+              headers: { Authorization: `Bearer ${token}` },
             });
+            let existing = null;
+            if (getRes.ok) {
+              const data = await getRes.json();
+              if (Array.isArray(data)) {
+                existing = data.find(r => (r.itemName || r.title || '').trim().toLowerCase() === itemName.toLowerCase());
+              }
+            }
+            if (existing && existing.id) {
+              // Update existing recipe
+              await fetch(`${API_BASE}/recipes/${existing.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+              });
+            } else {
+              // Create new recipe
+              await fetch(`${API_BASE}/recipes`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+              });
+            }
           } catch (err) {
             console.error('Error sending recipe:', err);
           }

@@ -27,20 +27,45 @@ export default function InventoryImport({ API_BASE, token, fetchItems }) {
           if (!itemName || !baseUnit || !conversionRate || !quantityInStock || !max) continue;
           if (!['count', 'ounce'].includes(baseUnit.toLowerCase())) continue;
           try {
-            await fetch(`${API_BASE}/ingredients`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                itemName,
-                baseUnit: baseUnit.charAt(0).toUpperCase() + baseUnit.slice(1).toLowerCase(),
-                conversionRate: Number(conversionRate),
-                quantityInStock: Number(quantityInStock),
-                max: Number(max),
-              }),
+            // Check if ingredient exists (case-insensitive match)
+            const getRes = await fetch(`${API_BASE}/ingredients?name=${encodeURIComponent(itemName)}`, {
+              headers: { Authorization: `Bearer ${token}` },
             });
+            let existing = null;
+            if (getRes.ok) {
+              const data = await getRes.json();
+              if (Array.isArray(data)) {
+                existing = data.find(i => (i.itemName || '').trim().toLowerCase() === itemName.toLowerCase());
+              }
+            }
+            const payload = {
+              itemName,
+              baseUnit: baseUnit.charAt(0).toUpperCase() + baseUnit.slice(1).toLowerCase(),
+              conversionRate: Number(conversionRate),
+              quantityInStock: Number(quantityInStock),
+              max: Number(max),
+            };
+            if (existing && existing.id) {
+              // Update existing ingredient
+              await fetch(`${API_BASE}/ingredients/${existing.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+              });
+            } else {
+              // Create new ingredient
+              await fetch(`${API_BASE}/ingredients`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+              });
+            }
           } catch (err) {
             // Optionally handle error
           }
