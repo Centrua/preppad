@@ -615,7 +615,7 @@ export default function ShoppingListPage() {
           >
             {ingredients.map((ingredient) => (
               <MenuItem key={ingredient.id} value={ingredient.name}>
-                {`${ingredient.name} (${ingredient.baseUnit})`}
+                {`${ingredient.name}`}
               </MenuItem>
             ))}
           </TextField>
