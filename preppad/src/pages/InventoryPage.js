@@ -140,7 +140,7 @@ export default function InventoryPage() {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ quantity: form.max - form.quantityInStock }),
+                body: JSON.stringify({ quantity: Math.max(1, form.max - form.quantityInStock) }),
               });
 
               if (!updateListRes.ok) {
