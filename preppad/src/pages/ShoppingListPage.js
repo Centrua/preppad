@@ -656,9 +656,16 @@ export default function ShoppingListPage() {
                   <DraggableRow key={row.id} row={row} />
                 ))}
               </DroppableContainer>
+
+
+              {/*
               <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
                 Submit To Pending Purchases
               </Button>
+              */}
+
+
+              
             </Paper>
 
             {/* Shopping List Box */}
