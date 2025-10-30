@@ -613,11 +613,13 @@ export default function ShoppingListPage() {
             variant="outlined"
             style={{ flex: 1, marginRight: '8px' }}
           >
-            {ingredients.map((ingredient) => (
-              <MenuItem key={ingredient.id} value={ingredient.name}>
-                {`${ingredient.name}`}
-              </MenuItem>
-            ))}
+            {ingredients
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((ingredient) => (
+                <MenuItem key={ingredient.id} value={ingredient.name}>
+                  {`${ingredient.name}`}
+                </MenuItem>
+              ))}
           </TextField>
           <TextField
             label="Quantity"
@@ -665,7 +667,7 @@ export default function ShoppingListPage() {
               */}
 
 
-              
+
             </Paper>
 
             {/* Shopping List Box */}
