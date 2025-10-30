@@ -895,7 +895,7 @@ export default function RecipePage() {
                       Unit Cost: <Typography component="span" sx={{ fontWeight: 'bold' }}>${parseFloat(recipe.unitCost).toFixed(2)}</Typography>
                     </Typography>
                     <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
-                      Ingredients:
+                      Shared Ingredients:
                     </Typography>
                     {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ing, i) => {
                       if (!ing) return null;
@@ -1034,7 +1034,7 @@ export default function RecipePage() {
                       Unit Cost: <Typography component="span" sx={{ fontWeight: 'bold' }}>${parseFloat(recipe.unitCost).toFixed(2)}</Typography>
                     </Typography>
                     <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
-                      Ingredients:
+                      Shared Ingredients:
                     </Typography>
                     {recipe.ingredients.map((ing, i) => {
                       const unit = ing.unit || '';
