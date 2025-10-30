@@ -1,4 +1,3 @@
-
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import {
@@ -353,24 +352,24 @@ export default function RecipePage() {
     setEditingIndex(null);
     setEditingId(null);
     setForm({
-    title: '',
-    unitCost: '',
-    ingredients: [{ title: '', quantity: '', unit: '' }],
-    categories: [],
-    modifiers: [], // <-- reset modifiers
+      title: '',
+      unitCost: '',
+      ingredients: [{ title: '', quantity: '', unit: '' }],
+      categories: [],
+      modifiers: [], // <-- reset modifiers
     });
   };
 
   const categoryOptions = [
-    'Breakfast',
-    'Lunch',
-    'Dinner',
-    'Snack',
-    'Dessert',
-    'Beverage',
-    'Appetizer',
-    'Side',
-    'Other',
+    'Breakfast Recipes',
+    'Lunch Recipes',
+    'Dinner Recipes',
+    'Snack Recipes',
+    'Dessert Recipes',
+    'Beverage Recipes',
+    'Appetizer Recipes',
+    'Side Recipes',
+    'Other Recipes',
   ];
 
   const handleCategoryChange = (event) => {
@@ -464,20 +463,20 @@ export default function RecipePage() {
         await fetch(`${API_BASE}/recipes/${originalRecipe.id}`, {
           method: 'PUT',
           headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: originalRecipe.id,
-              variations: updatedVariations,
-            }),
-          });
-          setRecipes((prev) => prev.map(r =>
-            r.id === originalRecipe.id
-              ? { ...r, variations: updatedVariations }
-              : r
-          ));
-        }
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: originalRecipe.id,
+            variations: updatedVariations,
+          }),
+        });
+        setRecipes((prev) => prev.map(r =>
+          r.id === originalRecipe.id
+            ? { ...r, variations: updatedVariations }
+            : r
+        ));
+      }
       // Remove the variation from UI
       setRecipes((prev) => prev.filter(r => r.id !== variationRecipe.id));
     } catch (err) {
@@ -603,15 +602,9 @@ export default function RecipePage() {
     <Layout>
       <Box sx={{ p: 4 }}>
         <div ref={topRef} />
-        <Typography variant="h5" gutterBottom>
+        <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
           Recipe Management
         </Typography>
-        <Typography variant="body2" color="warning.main" sx={{ mb: 2 }}>
-          Disclaimer: Recipes should only contain base ingredients. Do not include additional or optional ingredients in the recipe.
-        </Typography>
-
-        {/* Image Import & OCR */}
-        <RecipeImageImport />
 
         {/* Form */}
         <Paper elevation={3} sx={{ p: 4, mb: 5 }}>
@@ -841,7 +834,18 @@ export default function RecipePage() {
               )}
             </Box>
           </form>
+
+          <Divider sx={{ my: 4 }} /> {/* Add a divider with vertical spacing */}
+          <Grid item xs={12} md={4} sx={{ mt: 4 }}> {/* Add margin-top to move it further down */}
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              <RecipeImageImport />
+            </Box>
+          </Grid>
         </Paper>
+
+
+        <Divider sx={{ my: 6, borderBottomWidth: 3 }} />
+
 
         {/* Recipes List */}
         <RecipesImport API_BASE={API_BASE} token={localStorage.getItem('token')} fetchRecipes={fetchRecipes} />
@@ -862,276 +866,277 @@ export default function RecipePage() {
             .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()));
           if (catRecipes.length === 0) return null;
           return (
-            <Box key={cat} sx={{ mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
+            <Paper key={cat} elevation={3} sx={{ mb: 4, p: 3, borderRadius: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
                 {cat}
               </Typography>
-              {catRecipes.map((recipe, index) => (
-                <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
-                  <Grid container justifyContent="space-between" alignItems="center">
-                    <Grid item>
-                      <Typography variant="h6">{recipe.title}</Typography>
+              <Box display="flex" flexDirection="column" gap={2}>
+                {catRecipes.map((recipe, index) => (
+                  <Paper key={recipe.id || index} elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                    <Grid container justifyContent="space-between" alignItems="center">
+                      <Grid item>
+                        <Typography variant="h6">{recipe.title}</Typography>
+                      </Grid>
                     </Grid>
-                  </Grid>
-                  {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
-                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
-                      {recipe.modifiers.map((mod, i) => {
-                        const ingredientName = ingredientsList.find(ing => ing.id === mod.ingredientId)?.itemName || mod.ingredientId;
-                        return (
-                          <Typography key={i} variant="body2" sx={{ ml: 2 }}>
-                            Name: {mod.name} | Ingredient: {ingredientName} | Quantity: {mod.quantity}
-                          </Typography>
-                        );
-                      })}
-                    </Box>
-                  )}
-                  <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                    Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
-                  </Typography>
-                  <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
-                    Ingredients:
-                  </Typography>
-                  {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ing, i) => {
-                    if (!ing) return null;
-                    const unit = ing.unit || '';
-                    return (
-                      <Typography key={i} sx={{ ml: 2 }}>
-                        • {ing.title}
-                        {ing.quantity && (
-                          <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
-                        )}
-                      </Typography>
-                    );
-                  })}
-                  <Divider sx={{ mt: 2, mb: 1 }} />
-                  <Box display="flex" gap={1}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<EditIcon />}
-                      onClick={() => editRecipe(recipes.findIndex(r => r.id === recipe.id))}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteIcon />}
-                      onClick={() => handleDeleteClick(recipes.findIndex(r => r.id === recipe.id))}
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => openAddVariationDialog(recipe)}
-                    >
-                      Add Variation
-                    </Button>
-                  </Box>
-
-                  {/* Show variations as sub-recipes */}
-                  {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
-                    <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
-                      {recipe.variations.map(variationId => {
-                        const variation = recipes.find(r => r.id === variationId);
-                        if (!variation) return null;
-                        return (
-                          <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
-                            <Typography variant="subtitle1">{variation.title}</Typography>
-                            {Array.isArray(variation.modifiers) && variation.modifiers.length > 0 && (
-                              <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
-                                {variation.modifiers.map((mod, i) => (
-                                  <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
-                                    {mod}
-                                  </Box>
-                                ))}
-                              </Box>
-                            )}
-                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
-                            {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
-                              if (!ing) return null;
-                              const unit = ing.unit || '';
-                              return (
-                                <Typography key={i} sx={{ ml: 2 }}>
-                                  • {ing.title}
-                                  {ing.quantity && (
-                                    <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
-                                  )}
-                                </Typography>
-                              );
-                            })}
-                            <Typography variant="body2" sx={{ mt: 1 }}>
-                              Unit Cost: ${parseFloat(variation.unitCost).toFixed(2)}
+                    {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
+                      <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                        {recipe.modifiers.map((mod, i) => {
+                          const ingredientName = ingredientsList.find(ing => ing.id === mod.ingredientId)?.itemName || mod.ingredientId;
+                          return (
+                            <Typography key={i} variant="body2" sx={{ ml: 2 }}>
+                              Name: {mod.name} | Ingredient: {ingredientName} | Quantity: {mod.quantity}
                             </Typography>
-                            <Box display="flex" gap={1} mt={1}>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => editRecipe(recipes.findIndex(r => r.id === variation.id))}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                onClick={() => openDeleteVariationDialog(variation, recipe)}
-                              >
-                                Delete Variation
-                              </Button>
-                            </Box>
-                          </Paper>
-                        );
-                      })}
+                          );
+                        })}
+                      </Box>
+                    )}
+                    <Typography variant="subtitle1" sx={{ mt: 1, fontSize: '15px' }}>
+                      Unit Cost: <Typography component="span" sx={{ fontWeight: 'bold' }}>${parseFloat(recipe.unitCost).toFixed(2)}</Typography>
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
+                      Shared Ingredients:
+                    </Typography>
+                    {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ing, i) => {
+                      if (!ing) return null;
+                      const unit = ing.unit || '';
+                      return (
+                        <Typography key={i} sx={{ ml: 2 }}>
+                          • {ing.title}
+                          {ing.quantity && (
+                            <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                          )}
+                        </Typography>
+                      );
+                    })}
+                    <Divider sx={{ mt: 2, mb: 1 }} />
+                    <Box display="flex" gap={1}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => editRecipe(recipes.findIndex(r => r.id === recipe.id))}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDeleteClick(recipes.findIndex(r => r.id === recipe.id))}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => openAddVariationDialog(recipe)}
+                      >
+                        Add Variation
+                      </Button>
                     </Box>
-                  )}
-                </Paper>
-              ))}
-            </Box>
+                    {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
+                      <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
+                        {recipe.variations.map(variationId => {
+                          const variation = recipes.find(r => r.id === variationId);
+                          if (!variation) return null;
+                          return (
+                            <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
+                              <Typography variant="subtitle1">{variation.title}</Typography>
+                              {Array.isArray(variation.modifiers) && variation.modifiers.length > 0 && (
+                                <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                                  {variation.modifiers.map((mod, i) => (
+                                    <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
+                                      {mod}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
+                              <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
+                              {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
+                                if (!ing) return null;
+                                const unit = ing.unit || '';
+                                return (
+                                  <Typography key={i} sx={{ ml: 2 }}>
+                                    • {ing.title}
+                                    {ing.quantity && (
+                                      <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                                    )}
+                                  </Typography>
+                                );
+                              })}
+                              <Typography variant="body2" sx={{ mt: 1 }}>
+                                Unit Cost: ${parseFloat(variation.unitCost).toFixed(2)}
+                              </Typography>
+                              <Box display="flex" gap={1} mt={1}>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => editRecipe(recipes.findIndex(r => r.id === variation.id))}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() => openDeleteVariationDialog(variation, recipe)}
+                                >
+                                  Delete Variation
+                                </Button>
+                              </Box>
+                            </Paper>
+                          );
+                        })}
+                      </Box>
+                    )}
+                  </Paper>
+                ))}
+              </Box>
+
+            </Paper>
           );
         })}
         {/* Show recipes with no category */}
         {mainRecipes.filter(r => !r.categories || r.categories.length === 0)
           .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
-              Uncategorized
-            </Typography>
-            {mainRecipes
-              .filter(r => !r.categories || r.categories.length === 0)
-              .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map((recipe, index) => (
-              <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
-                <Grid container justifyContent="space-between" alignItems="center">
-                  <Grid item>
-                    <Typography variant="h6">{recipe.title}</Typography>
-                  </Grid>
-                </Grid>
-                {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
-                  <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
-                    {recipe.modifiers.map((mod, i) => {
-                      const ingredientName = ingredientsList.find(ing => ing.id === mod.ingredientId)?.itemName || mod.ingredientId;
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2, mb: 1 }}>
+                Uncategorized
+              </Typography>
+              {mainRecipes
+                .filter(r => !r.categories || r.categories.length === 0)
+                .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((recipe, index) => (
+                  <Paper key={recipe.id || index} elevation={3} sx={{ p: 3, mb: 3 }}>
+                    <Grid container justifyContent="space-between" alignItems="center">
+                      <Grid item>
+                        <Typography variant="h6">{recipe.title}</Typography>
+                      </Grid>
+                    </Grid>
+                    {Array.isArray(recipe.modifiers) && recipe.modifiers.length > 0 && (
+                      <Box sx={{ mt: 1, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                        {recipe.modifiers.map((mod, i) => {
+                          const ingredientName = ingredientsList.find(ing => ing.id === mod.ingredientId)?.itemName || mod.ingredientId;
+                          return (
+                            <Typography key={i} variant="body2" sx={{ ml: 2 }}>
+                              Name: {mod.name} | Ingredient: {ingredientName} | Quantity: {mod.quantity}
+                            </Typography>
+                          );
+                        })}
+                      </Box>
+                    )}
+                    <Typography variant="subtitle1" sx={{ mt: 1, fontSize: '15px' }}>
+                      Unit Cost: <Typography component="span" sx={{ fontWeight: 'bold' }}>${parseFloat(recipe.unitCost).toFixed(2)}</Typography>
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
+                      Shared Ingredients:
+                    </Typography>
+                    {recipe.ingredients.map((ing, i) => {
+                      const unit = ing.unit || '';
                       return (
-                        <Typography key={i} variant="body2" sx={{ ml: 2 }}>
-                          Name: {mod.name} | Ingredient: {ingredientName} | Quantity: {mod.quantity}
+                        <Typography key={i} sx={{ ml: 2 }}>
+                          • {ing.title}
+                          {ing.quantity && (
+                            <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                          )}
                         </Typography>
                       );
                     })}
-                  </Box>
-                )}
-                <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                  Unit Cost: ${parseFloat(recipe.unitCost).toFixed(2)}
-                </Typography>
-                <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 'bold' }}>
-                  Ingredients:
-                </Typography>
-                {recipe.ingredients.map((ing, i) => {
-                  const unit = ing.unit || '';
-                  return (
-                    <Typography key={i} sx={{ ml: 2 }}>
-                      • {ing.title}
-                      {ing.quantity && (
-                        <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
-                      )}
-                    </Typography>
-                  );
-                })}
-                <Divider sx={{ mt: 2, mb: 1 }} />
-                <Box display="flex" gap={1}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    onClick={() => editRecipe(recipes.findIndex(r => r.id === recipe.id))}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDeleteClick(recipes.findIndex(r => r.id === recipe.id))}
-                  >
-                    Delete
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => openAddVariationDialog(recipe)}
-                  >
-                    Add Variation
-                  </Button>
-                </Box>
-
-                {/* Show variations as sub-recipes */}
-                  {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
-                    <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
-                      {recipe.variations.map(variationId => {
-                        const variation = recipes.find(r => r.id === variationId);
-                        if (!variation) return null;
-                        return (
-                          <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
-                            <Typography variant="subtitle1">{variation.title}</Typography>
-                            {Array.isArray(variation.modifiers) && variation.modifiers.length > 0 && (
-                              <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
-                                {variation.modifiers.map((mod, i) => (
-                                  <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
-                                    {mod}
-                                  </Box>
-                                ))}
-                              </Box>
-                            )}
-                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
-                            {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
-                              if (!ing) return null;
-                              const unit = ing.unit || '';
-                              return (
-                                <Typography key={i} sx={{ ml: 2 }}>
-                                  • {ing.title}
-                                  {ing.quantity && (
-                                    <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
-                                  )}
-                                </Typography>
-                              );
-                            })}
-                            <Typography variant="body2" sx={{ mt: 1 }}>
-                              Unit Cost: ${parseFloat(variation.unitCost).toFixed(2)}
-                            </Typography>
-                            <Box display="flex" gap={1} mt={1}>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => editRecipe(recipes.findIndex(r => r.id === variation.id))}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                onClick={() => openDeleteVariationDialog(variation, recipe)}
-                              >
-                                Delete Variation
-                              </Button>
-                            </Box>
-                          </Paper>
-                        );
-                      })}
+                    <Divider sx={{ mt: 2, mb: 1 }} />
+                    <Box display="flex" gap={1}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => editRecipe(recipes.findIndex(r => r.id === recipe.id))}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDeleteClick(recipes.findIndex(r => r.id === recipe.id))}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => openAddVariationDialog(recipe)}
+                      >
+                        Add Variation
+                      </Button>
                     </Box>
-                  )}
-              </Paper>
-            ))}
-          </Box>
-        )}
+
+                    {/* Show variations as sub-recipes */}
+                    {Array.isArray(recipe.variations) && recipe.variations.length > 0 && (
+                      <Box sx={{ ml: 4, mt: 2, mb: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Variations:</Typography>
+                        {recipe.variations.map(variationId => {
+                          const variation = recipes.find(r => r.id === variationId);
+                          if (!variation) return null;
+                          return (
+                            <Paper key={variation.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: '#f9f9f9' }}>
+                              <Typography variant="subtitle1">{variation.title}</Typography>
+                              {Array.isArray(variation.modifiers) && variation.modifiers.length > 0 && (
+                                <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', mr: 1 }}>Modifiers:</Typography>
+                                  {variation.modifiers.map((mod, i) => (
+                                    <Box key={i} sx={{ px: 1.5, py: 0.5, bgcolor: '#e0e0e0', borderRadius: 2, fontSize: 13 }}>
+                                      {mod}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
+                              <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>Ingredients:</Typography>
+                              {Array.isArray(variation.ingredients) && variation.ingredients.map((ing, i) => {
+                                if (!ing) return null;
+                                const unit = ing.unit || '';
+                                return (
+                                  <Typography key={i} sx={{ ml: 2 }}>
+                                    • {ing.title}
+                                    {ing.quantity && (
+                                      <> — {ing.quantity}{unit ? ` (${unit})` : ''}</>
+                                    )}
+                                  </Typography>
+                                );
+                              })}
+                              <Typography variant="body2" sx={{ mt: 1 }}>
+                                Unit Cost: ${parseFloat(variation.unitCost).toFixed(2)}
+                              </Typography>
+                              <Box display="flex" gap={1} mt={1}>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => editRecipe(recipes.findIndex(r => r.id === variation.id))}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() => openDeleteVariationDialog(variation, recipe)}
+                                >
+                                  Delete Variation
+                                </Button>
+                              </Box>
+                            </Paper>
+                          );
+                        })}
+                      </Box>
+                    )}
+                  </Paper>
+                ))}
+            </Box>
+          )}
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
