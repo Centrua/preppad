@@ -1,26 +1,28 @@
-import React, { useEffect, useState, useRef } from 'react';
-import Layout from '../components/Layout';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import EmailIcon from '@mui/icons-material/Email';
+import PrintIcon from '@mui/icons-material/Print';
+import SmsIcon from '@mui/icons-material/Sms';
 import {
   Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  Typography,
-  CircularProgress,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  TableContainer,
-  Snackbar,
+  Typography,
 } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import PrintIcon from '@mui/icons-material/Print';
+import { useEffect, useRef, useState } from 'react';
+import Layout from '../components/Layout';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
@@ -44,6 +46,64 @@ export default function PendingPurchasesPage() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [smsRecipient, setSmsRecipient] = useState('');
+  const [actionPurchase, setActionPurchase] = useState(null);
+  const [emailError, setEmailError] = useState('');
+  const [smsError, setSmsError] = useState('');
+  const handleEmail = (purchase) => {
+    setActionPurchase(purchase);
+    setEmailDialogOpen(true);
+  };
+
+
+  const handleSendEmail = () => {
+    setEmailError('');
+    if (!emailRecipient || !emailRecipient.trim()) {
+      setEmailError('Email is required.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailRecipient.trim())) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    // Placeholder: Implement actual email sending logic/API call here
+    setEmailDialogOpen(false);
+    setEmailRecipient('');
+    setActionPurchase(null);
+    setSnackbarMessage('Email sent successfully!');
+    setSnackbarOpen(true);
+  };
+
+  const handleSms = (purchase) => {
+    setActionPurchase(purchase);
+    setSmsDialogOpen(true);
+  };
+
+
+  const handleSendSms = () => {
+    setSmsError('');
+    if (!smsRecipient || !smsRecipient.trim()) {
+      setSmsError('Phone number is required.');
+      return;
+    }
+    const phoneRegex = /^\+?[0-9\s\-()]{7,}$/;
+    if (!phoneRegex.test(smsRecipient.trim())) {
+      setSmsError('Please enter a valid phone number.');
+      return;
+    }
+    // Placeholder: Implement actual SMS sending logic/API call here
+    setSmsDialogOpen(false);
+    setSmsRecipient('');
+    setActionPurchase(null);
+    setSnackbarMessage('Text message sent successfully!');
+    setSnackbarOpen(true);
+  };
 
   const token = localStorage.getItem('token');
 
@@ -73,7 +133,7 @@ export default function PendingPurchasesPage() {
       purchase.status === 'completed' && purchase.totalPrice != null
         ? String(purchase.totalPrice)
         : ''
-    ); 
+    );
     setPurchaseLocation(purchase.purchaseLocation);
     setOpenDialog(true);
   };
@@ -183,6 +243,7 @@ export default function PendingPurchasesPage() {
   const handleCopy = (purchase) => {
     const text = getPurchaseText(purchase);
     navigator.clipboard.writeText(text);
+    setSnackbarMessage('Copied purchase details to clipboard!');
     setSnackbarOpen(true);
   };
 
@@ -255,7 +316,7 @@ export default function PendingPurchasesPage() {
       try {
         const errData = await res.json();
         if (errData.error) errMessage = errData.error;
-      } catch (_) {}
+      } catch (_) { }
 
       if (!res.ok) {
         throw new Error(errMessage);
@@ -404,6 +465,22 @@ export default function PendingPurchasesPage() {
                     >
                       <PrintIcon fontSize="small" />
                     </Button>
+                    <Button
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => handleEmail(purchase)}
+                      title="Email"
+                    >
+                      <EmailIcon fontSize="small" />
+                    </Button>
+                    <Button
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => handleSms(purchase)}
+                      title="Text"
+                    >
+                      <SmsIcon fontSize="small" />
+                    </Button>
                     {renderDeleteButton(purchase)}
                   </TableCell>
                 </TableRow>
@@ -411,6 +488,52 @@ export default function PendingPurchasesPage() {
             </TableBody>
           </Table>
         </Paper>
+
+        {/* Email Dialog */}
+                  <Dialog open={emailDialogOpen} onClose={() => setEmailDialogOpen(false)} fullWidth>
+                    <DialogTitle>Email Purchase Details</DialogTitle>
+                    <DialogContent>
+                      <TextField
+                        label="Recipient Email"
+                        value={emailRecipient}
+                        onChange={e => { setEmailRecipient(e.target.value); setEmailError(''); }}
+                        fullWidth
+                        margin="normal"
+                        type="email"
+                        error={!!emailError}
+                        helperText={emailError}
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setEmailDialogOpen(false)} color="inherit">Cancel</Button>
+                      <Button onClick={handleSendEmail} color="primary" variant="contained">
+                        Send Email
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+
+                  {/* SMS Dialog */}
+                  <Dialog open={smsDialogOpen} onClose={() => setSmsDialogOpen(false)} fullWidth>
+                    <DialogTitle>Text Purchase Details</DialogTitle>
+                    <DialogContent>
+                      <TextField
+                        label="Recipient Phone Number"
+                        value={smsRecipient}
+                        onChange={e => { setSmsRecipient(e.target.value); setSmsError(''); }}
+                        fullWidth
+                        margin="normal"
+                        type="tel"
+                        error={!!smsError}
+                        helperText={smsError}
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setSmsDialogOpen(false)} color="inherit">Cancel</Button>
+                      <Button onClick={handleSendSms} color="primary" variant="contained">
+                        Send Text
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
 
         {/* Confirm/View Dialog */}
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -427,14 +550,14 @@ export default function PendingPurchasesPage() {
             )}
             {selectedPurchase && (
               <>
-                  <TextField
-                    label="Search Items"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                    placeholder="Search by item name"
-                  />
+                <TextField
+                  label="Search Items"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  placeholder="Search by item name"
+                />
 
                 <TableContainer component={Paper}>
                   <Table
@@ -501,7 +624,7 @@ export default function PendingPurchasesPage() {
                 </TextField>
 
 
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left', gap: 1, marginTop: 3, marginLeft: 1}}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left', gap: 1, marginTop: 3, marginLeft: 1 }}>
                   <Typography variant="subtitle1" sx={{ minWidth: 130, textAlign: 'left' }}>
                     Total Price ($):
                   </Typography>
@@ -526,20 +649,20 @@ export default function PendingPurchasesPage() {
                 Confirm List
               </Button>
             )}
-        {/* Confirm Inventory Update Dialog */}
-        <Dialog open={confirmInventoryDialogOpen} onClose={() => setConfirmInventoryDialogOpen(false)}>
-          <DialogTitle>Confirm Purchase</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Are you sure you want to confirm this purchase?
-            </Typography>
-            <Typography>This will update the inventory and is <b>irreversible</b>.</Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setConfirmInventoryDialogOpen(false)} color="inherit">Cancel</Button>
-            <Button onClick={handleConfirmInventoryProceed} color="error" variant="contained">Proceed</Button>
-          </DialogActions>
-        </Dialog>
+            {/* Confirm Inventory Update Dialog */}
+            <Dialog open={confirmInventoryDialogOpen} onClose={() => setConfirmInventoryDialogOpen(false)}>
+              <DialogTitle>Confirm Purchase</DialogTitle>
+              <DialogContent>
+                <Typography>
+                  Are you sure you want to confirm this purchase?
+                </Typography>
+                <Typography>This will update the inventory and is <b>irreversible</b>.</Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setConfirmInventoryDialogOpen(false)} color="inherit">Cancel</Button>
+                <Button onClick={handleConfirmInventoryProceed} color="error" variant="contained">Proceed</Button>
+              </DialogActions>
+            </Dialog>
           </DialogActions>
         </Dialog>
 
@@ -572,7 +695,7 @@ export default function PendingPurchasesPage() {
           open={snackbarOpen}
           autoHideDuration={2000}
           onClose={() => setSnackbarOpen(false)}
-          message="Copied purchase details to clipboard!"
+          message={snackbarMessage}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         />
       </Box>
