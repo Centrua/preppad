@@ -17,6 +17,7 @@ import SquareOAuth from './profile/SquareOAuth';
 // Pages for each menu route
 import IntegrationsPage from './pages/IntegrationsPage';
 import InventoryPage from './pages/InventoryPage';
+import LandingPage from './pages/LandingPage';
 import PendingPurchasesPage from './pages/PendingPurchasesPage';
 import RecipesPage from './pages/RecipesPage';
 import ReportsPage from './pages/ReportsPage';
@@ -27,15 +28,8 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <BrowserRouter>
     <Routes>
-      {/* Root route loads protected Dashboard */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+      {/* Root route loads Landing Page */}
+      <Route path="/" element={<LandingPage />} />
 
       {/* Public Routes */}
       <Route path="/sign-in" element={<SignIn />} />

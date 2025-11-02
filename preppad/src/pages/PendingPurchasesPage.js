@@ -108,12 +108,6 @@ export default function PendingPurchasesPage() {
     if (!selectedPurchase || !selectedPurchase.id) return;
     setFormError('');
 
-    if (!purchaseLocation) {
-      setFormError('Purchase location is required.');
-      setConfirmInventoryDialogOpen(false);
-      return;
-    }
-
     try {
       const res = await fetch(
         `${API_BASE}/pending-purchase/${selectedPurchase.id}/complete`,
