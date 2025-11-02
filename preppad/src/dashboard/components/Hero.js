@@ -81,7 +81,7 @@ export default function Hero() {
                 }),
               })}
             >
-              Smart Kitchen Management
+              Take Control
             </Typography>
           </Typography>
           <Typography
@@ -107,10 +107,12 @@ export default function Hero() {
               size="large"
               fullWidth
               component={Link}
-              href="/sign-up"
+              href="https://calendly.com/iangongwerpersonal/30min"
+              target="_blank"
+              rel="noopener noreferrer"
               sx={{ minWidth: 'fit-content' }}
             >
-              Get Started Free
+              Book Demo for Free Trial
             </Button>
             <Button
               variant="outlined"

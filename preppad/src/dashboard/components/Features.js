@@ -8,34 +8,31 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import { styled } from '@mui/material/styles';
 
-import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
-import EdgesensorHighRoundedIcon from '@mui/icons-material/EdgesensorHighRounded';
-import ViewQuiltRoundedIcon from '@mui/icons-material/ViewQuiltRounded';
+import InventoryRoundedIcon from '@mui/icons-material/InventoryRounded';
+import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded';
+import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
 
 const items = [
   {
-    icon: <ViewQuiltRoundedIcon />,
+    icon: <InventoryRoundedIcon />,
     title: 'Inventory Management',
     description:
       'Track ingredient stock levels in real-time, set reorder points, and get alerts when items are running low. Never run out of essential ingredients.',
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-dark.png")`,
+    image: `url("/images/Inventory Page.png")`,
   },
   {
-    icon: <EdgesensorHighRoundedIcon />,
+    icon: <MenuBookRoundedIcon />,
     title: 'Recipe Management',
     description:
       'Create and manage recipes with precise ingredient measurements. Track recipe costs, variations, and modifiers all in one place.',
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-dark.png")`,
+    image: `url("/images/Recipes Page.png")`,
   },
   {
-    icon: <DevicesRoundedIcon />,
+    icon: <ShoppingCartRoundedIcon />,
     title: 'Smart Purchasing',
     description:
       'Automated shopping lists based on inventory levels and upcoming needs. Track pending purchases and confirm deliveries with ease.',
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-dark.png")`,
+    image: `url("/images/Shopping List Page.png")`,
   },
 ];
 
@@ -85,21 +82,17 @@ function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature }) {
       </Box>
       <Card variant="outlined">
         <Box
-          sx={(theme) => ({
+          sx={{
             mb: 2,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             minHeight: 280,
-            backgroundImage: 'var(--items-imageLight)',
-            ...theme.applyStyles('dark', {
-              backgroundImage: 'var(--items-imageDark)',
-            }),
-          })}
+            backgroundImage: 'var(--items-image)',
+          }}
           style={
             items[selectedItemIndex]
               ? {
-                  '--items-imageLight': items[selectedItemIndex].imageLight,
-                  '--items-imageDark': items[selectedItemIndex].imageDark,
+                  '--items-image': items[selectedItemIndex].image,
                 }
               : {}
           }
@@ -125,8 +118,7 @@ MobileLayout.propTypes = {
   selectedFeature: PropTypes.shape({
     description: PropTypes.string.isRequired,
     icon: PropTypes.element,
-    imageDark: PropTypes.string.isRequired,
-    imageLight: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
   selectedItemIndex: PropTypes.number.isRequired,
@@ -158,9 +150,9 @@ export default function Features() {
           variant="body1"
           sx={{ color: 'text.secondary', mb: { xs: 2, sm: 4 } }}
         >
-          Provide a brief overview of the key features of the product. For example,
-          you could list the number of features, their types or benefits, and
-          add-ons.
+          Designed to streamline your kitchen operations, PrepPad offers a suite of
+          powerful features that empower restaurant owners and chefs to manage their
+          inventory, recipes, and purchasing with ease and efficiency.
         </Typography>
       </Box>
       <Box
@@ -246,21 +238,19 @@ export default function Features() {
             }}
           >
             <Box
-              sx={(theme) => ({
+              sx={{
                 m: 'auto',
-                width: 420,
+                width: 600,
                 height: 500,
                 backgroundSize: 'contain',
-                backgroundImage: 'var(--items-imageLight)',
-                ...theme.applyStyles('dark', {
-                  backgroundImage: 'var(--items-imageDark)',
-                }),
-              })}
+                backgroundImage: 'var(--items-image)',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+              }}
               style={
                 items[selectedItemIndex]
                   ? {
-                      '--items-imageLight': items[selectedItemIndex].imageLight,
-                      '--items-imageDark': items[selectedItemIndex].imageDark,
+                      '--items-image': items[selectedItemIndex].image,
                     }
                   : {}
               }

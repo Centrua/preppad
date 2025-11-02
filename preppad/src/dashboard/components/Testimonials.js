@@ -7,91 +7,29 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
-import { useColorScheme } from '@mui/material/styles';
 
 const userTestimonials = [
   {
-    avatar: <Avatar alt="Sarah Chen" src="/static/images/avatar/1.jpg" />,
-    name: 'Sarah Chen',
-    occupation: 'Head Chef, Garden Bistro',
+    avatar: <Avatar alt="Sherry Myers" src="/static/images/avatar/1.jpg" />,
+    name: 'Sherry Myers',
+    occupation: 'Owner, Well Grounded Cafe',
     testimonial:
-      "PrepPad has transformed how we manage our kitchen. The automatic shopping lists and low stock alerts have eliminated our stockout issues. We've cut food waste by 30% in just three months!",
-  },
-  {
-    avatar: <Avatar alt="Marcus Johnson" src="/static/images/avatar/2.jpg" />,
-    name: 'Marcus Johnson',
-    occupation: 'Restaurant Owner, The Local Tavern',
-    testimonial:
-      "The recipe cost analysis feature is a game-changer. I can now accurately price my menu items and track profitability in real-time. The Square integration makes everything seamless.",
-  },
-  {
-    avatar: <Avatar alt="Elena Rodriguez" src="/static/images/avatar/3.jpg" />,
-    name: 'Elena Rodriguez',
-    occupation: 'Kitchen Manager, Spice Route',
-    testimonial:
-      'Finally, an inventory system that my entire team can use without training. The CSV import saved us hours of data entry, and the interface is so intuitive that even new staff can navigate it easily.',
-  },
-  {
-    avatar: <Avatar alt="David Park" src="/static/images/avatar/4.jpg" />,
-    name: 'David Park',
-    occupation: 'Executive Chef, Fusion Kitchen',
-    testimonial:
-      "Managing recipe variations and modifiers used to be a nightmare. PrepPad makes it simple to track every ingredient across all our menu items. The detail level is exactly what we needed.",
-  },
-  {
-    avatar: <Avatar alt="Lisa Thompson" src="/static/images/avatar/5.jpg" />,
-    name: 'Lisa Thompson',
-    occupation: 'Operations Manager, Cafe Collective',
-    testimonial:
-      "The pending purchases feature streamlines our ordering process. We can now track deliveries, confirm purchases, and update inventory all in one place. It's saved us countless hours.",
-  },
-  {
-    avatar: <Avatar alt="James Wilson" src="/static/images/avatar/6.jpg" />,
-    name: 'James Wilson',
-    occupation: 'Sous Chef, Harbor View Restaurant',
-    testimonial:
-      "PrepPad's reporting capabilities give us insights we never had before. We can now make data-driven decisions about purchasing and menu planning. The ROI has been phenomenal.",
+      "The shopping list feature is so easy to use! They were so helpful with setting up my recipes for me and getting everything setup. Highly recommend PrepPad!",
   },
 ];
 
-const darkModeLogos = [
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560628e8573c43893fe0ace_Sydney-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f4d520d0517ae8e8ddf13_Bern-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f46794c159024c1af6d44_Montreal-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e891fa22f89efd7477a_TerraLight.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560a09d1f6337b1dfed14ab_colorado-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f5caa77bf7d69fb78792e_Ankara-white.svg',
-];
-
-const lightModeLogos = [
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560628889c3bdf1129952dc_Sydney-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f4d4d8b829a89976a419c_Bern-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f467502f091ccb929529d_Montreal-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e911fa22f2203d7514c_TerraDark.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560a0990f3717787fd49245_colorado-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f5ca4e548b0deb1041c33_Ankara-black.svg',
+const logos = [
+  'images/Well Grounded Cafe Logo.png',
 ];
 
 const logoStyle = {
-  width: '64px',
+  maxWidth: '64px',
+  height: 'auto',
   opacity: 0.3,
+  objectFit: 'contain',
 };
 
 export default function Testimonials() {
-  const { mode, systemMode } = useColorScheme();
-
-  let logos;
-  if (mode === 'system') {
-    if (systemMode === 'light') {
-      logos = lightModeLogos;
-    } else {
-      logos = darkModeLogos;
-    }
-  } else if (mode === 'light') {
-    logos = lightModeLogos;
-  } else {
-    logos = darkModeLogos;
-  }
 
   return (
     <Container
