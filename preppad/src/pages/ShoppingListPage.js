@@ -40,7 +40,29 @@ const columns = [
       return isNaN(parsed) ? 0 : parsed;
     },
   },
+  {
+    field: 'packagesLeft',
+    headerName: 'Packages Left',
+    flex: 1,
+    editable: false,
+    headerAlign: 'center',
+    align: 'center',
+  },
 ];
+
+
+const lowInventoryColumns = [
+  { field: 'item', headerName: 'Item', flex: 1, headerAlign: 'center', align: 'center' },
+  { field: 'quantity', headerName: 'Packages Needed', flex: 1, headerAlign: 'center', align: 'center' },
+  { field: 'packagesLeft', headerName: 'Packages Left', flex: 1, headerAlign: 'center', align: 'center' },
+];
+
+const shoppingListColumns = [
+  { field: 'item', headerName: 'Item', flex: 1, headerAlign: 'center', align: 'center' },
+  { field: 'quantity', headerName: 'Packages', flex: 1, headerAlign: 'center', align: 'center' },
+];
+
+
 
 export default function ShoppingListPage() {
   const [rows, setRows] = useState([]);
@@ -171,7 +193,8 @@ export default function ShoppingListPage() {
           .map(item => ({
             id: item.id,
             item: item.itemName,
-            quantity: item.max - item.quantityInStock,
+            quantity: Math.round(item.max - item.quantityInStock),
+            packagesLeft: item.quantityInStock,
             note: '',
           }));
 
@@ -330,9 +353,9 @@ export default function ShoppingListPage() {
 
 
 
-// ------------------------------------- SELECTABLE FEATURES --------------------------------------------------
+  // ------------------------------------- SELECTABLE FEATURES --------------------------------------------------
 
-  const SelectableRow = ({ row, isFromLowInventory = true }) => {
+  const LowInventoryRow = ({ row, isFromLowInventory = true }) => {
     const isSelected = selectedItems.includes(row.id);
 
     return (
@@ -351,12 +374,41 @@ export default function ShoppingListPage() {
           transition: 'all 0.2s',
         }}
       >
-        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {row.item}
-          {row.note && (
-            <EditNoteIcon style={{ color: 'red', marginLeft: '8px' }} titleAccess="This item has a note" />
-          )}
+        <span style={{ flex: 1, textAlign: 'center' }}>{row.item}</span>
+        <span style={{ flex: 1, textAlign: 'center' }}>{row.quantity}</span>
+
+        <span style={{ flex: 1, textAlign: 'center' }}>
+          {Number(row.packagesLeft) % 1 === 0
+            ? Number(row.packagesLeft)
+            : Number(row.packagesLeft).toFixed(2)}
         </span>
+
+      </div>
+    );
+  };
+
+
+
+  const ShoppingListRow = ({ row, isFromLowInventory = true }) => {
+    const isSelected = selectedItems.includes(row.id);
+
+    return (
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          handleItemSelect(row.id);
+        }} style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '8px',
+          borderBottom: '1px solid #ddd',
+          cursor: 'pointer',
+          backgroundColor: isSelected ? '#e3f2fd' : '#f0f8ff',
+          border: isSelected ? '2px solid #2196f3' : '1px solid #ddd',
+          transition: 'all 0.2s',
+        }}
+      >
+        <span style={{ flex: 1, textAlign: 'center' }}>{row.item}</span>
         <span style={{ flex: 1, textAlign: 'center' }}>{row.quantity}</span>
       </div>
     );
@@ -485,7 +537,7 @@ export default function ShoppingListPage() {
 
 
 
-// --------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------
 
 
 
@@ -594,7 +646,7 @@ export default function ShoppingListPage() {
           </Button>
         </Box>
 
-        <DndContext> 
+        <DndContext>
           <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
             {/* Low Inventory Box */}
             <Paper
@@ -642,12 +694,12 @@ export default function ShoppingListPage() {
 
               <ClickableContainer
                 id="shoppingList"
-                columns={columns}
+                columns={lowInventoryColumns}
                 onContainerClick={handleContainerClick}
                 isTargetForSelected={selectedItems.length > 0 && customList.some(item => selectedItems.includes(item.id))}
               >
-                {filteredRows.map((row) => (
-                  <SelectableRow key={row.id} row={row} />
+                {filteredRows.map(row => (
+                  <LowInventoryRow key={row.id} row={row} />
                 ))}
               </ClickableContainer>
 
@@ -675,12 +727,12 @@ export default function ShoppingListPage() {
 
               <ClickableContainer
                 id="customList"
-                columns={columns}
+                columns={shoppingListColumns}
                 onContainerClick={handleContainerClick}
                 isTargetForSelected={selectedItems.length > 0 && rows.some(row => selectedItems.includes(row.id))}
               >
-                {customList.map((item) => (
-                  <SelectableRow key={item.id} row={item} />
+                {customList.map(item => (
+                  <ShoppingListRow key={item.id} row={item} />
                 ))}
               </ClickableContainer>
 
@@ -696,7 +748,7 @@ export default function ShoppingListPage() {
             </Paper>
           </Box>
 
-         
+
         </DndContext>
       </Box>
 
