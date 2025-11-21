@@ -143,6 +143,7 @@ export default function ShoppingListPage() {
       const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
       const response = await fetch(`${API_BASE}/ingredients`, {
+        method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -160,7 +161,8 @@ export default function ShoppingListPage() {
 
         setRows(lowInventoryItems);
       }
-    } catch (err) {
+    } 
+    catch (err) {
       console.error('Error refreshing inventory data:', err);
     }
   };
