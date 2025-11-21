@@ -132,13 +132,6 @@ export default function ShoppingListPage() {
 
   useEffect(() => {
     refreshLowInventory(); // Run the refresh once.
-
-    // Interval runs, so no need for button for refresh
-    const interval = setInterval(() => {
-      refreshLowInventory();
-    }, 45000);
-
-    return () => clearInterval(interval);
   }, []);
 
 
