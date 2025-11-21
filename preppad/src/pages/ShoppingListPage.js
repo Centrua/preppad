@@ -61,6 +61,9 @@ export default function ShoppingListPage() {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [ingredientNote, setIngredientNote] = useState('');
   const [onNoteConfirm, setOnNoteConfirm] = useState(null);
+  const [lowInventorySearchQuery, setLowInventorySearchQuery] = useState('');
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [moveMode, setMoveMode] = useState(false);
 
   const openDialog = (message) => {
     setDialogMessage(message);
@@ -139,40 +142,52 @@ export default function ShoppingListPage() {
   };
 
   useEffect(() => {
-    const fetchShoppingList = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const API_BASE = process.env.REACT_APP_API_BASE_URL;
+    refreshLowInventory(); // Run the refresh once.
 
-        const response = await fetch(`${API_BASE}/shopping-list`, {
-          headers:
-          {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    // Interval runs, so no need for button for refresh
+    const interval = setInterval(() => {
+      refreshLowInventory();
+    }, 45000);
 
-        const data = await response.json();
-        if (response.ok && data) {
-          const { itemIds, itemNames, quantities, notes } = data;
-
-          // Build rows from itemIds, itemNames, quantities, and notes
-          const newRows = (itemIds || []).map((itemId, index) => ({
-            id: itemId,
-            item: (itemNames && itemNames[index]) || 'Unnamed Item',
-            quantity: (quantities && quantities[index]) || 0,
-            note: (notes && notes[index]) || '',
-          }));
-          setRows(newRows);
-        } else {
-          console.error('Failed to load shopping list:', data.error);
-        }
-      } catch (err) {
-        console.error('Error fetching shopping list:', err);
-      }
-    };
-
-    fetchShoppingList();
+    return () => clearInterval(interval);
   }, []);
+
+
+
+  // Doing the same thing as first useEffect but just a callable funciton now.
+  const refreshLowInventory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+      const response = await fetch(`${API_BASE}/ingredients`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const inventoryData = await response.json();
+        const lowInventoryItems = inventoryData
+          .filter(item => item.quantityInStock < item.max)
+          .map(item => ({
+            id: item.id,
+            item: item.itemName,
+            quantity: item.max - item.quantityInStock,
+            note: '',
+          }));
+
+        setRows(lowInventoryItems);
+      }
+    } catch (err) {
+      console.error('Error refreshing inventory data:', err);
+    }
+  };
+
+
+
+
+
+
+
 
   useEffect(() => {
     const fetchIngredients = async () => {
@@ -270,156 +285,72 @@ export default function ShoppingListPage() {
     });
   };
 
+
+  // This function will now map added ingredients/items to the custom shopping list state. No more API call.
   const handleAddItem = () => {
-    if (!selectedIngredient) return;
+    if (!selectedIngredient) {
+      return;
+    }
 
     openNoteDialog(async (note) => {
       const ingredient = ingredients.find((ing) => ing.name === selectedIngredient);
-      if (!ingredient) return;
 
-      try {
-        const API_BASE = process.env.REACT_APP_API_BASE_URL;
-        const token = localStorage.getItem('token');
-
-        const payload = {
-          quantity: newQuantity,
-          note,
-        };
-
-        const response = await fetch(`${API_BASE}/shopping-list/${ingredient.id}/shopping-list`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Failed to add item to shopping list:', errorData.error || response.statusText);
-          return;
-        }
-
-        setRows((prev) => {
-          const existingRow = prev.find((row) => row.id === ingredient.id);
-          if (existingRow) {
-            // Update the quantity of the existing row but keep the existing note
-            return prev.map((row) =>
-              row.id === ingredient.id
-                ? { ...row, quantity: row.quantity + newQuantity }
-                : row
-            );
-          } else {
-            // Add a new row
-            return [
-              ...prev,
-              {
-                id: ingredient.id, // Use the ingredient's ID
-                item: ingredient.name, // Use the ingredient's name for display
-                quantity: newQuantity,
-                note, // Add the new note
-              },
-            ];
-          }
-        });
-
-        setSelectedIngredient('');
-        setNewQuantity(1);
-      } catch (error) {
-        console.error('Error adding item to shopping list:', error);
-      }
-    });
-  };
-
-  const handleDeleteItem = async (itemId) => {
-    try {
-      const API_BASE = process.env.REACT_APP_API_BASE_URL;
-      const token = localStorage.getItem('token');
-
-      // Find the current quantity for the item
-      const currentRow = rows.find((row) => row.id === itemId);
-      if (!currentRow) {
-        console.error('Item not found in the shopping list');
+      if (!ingredient) {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/shopping-list/${itemId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ quantity: currentRow.quantity }), // Include current quantity in the request body
+      setCustomList((prev) => {
+        const existingItem = prev.find((item) => item.id === ingredient.id);
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === ingredient.id
+              ? { ...item, quantity: item.quantity + newQuantity }
+              : item
+          );
+        }
+        else {
+          return [
+            ...prev,
+            {
+              id: ingredient.id,
+              item: ingredient.name,
+              quantity: newQuantity,
+              note,
+            },
+          ];
+        }
       });
 
-      if (response.ok) {
-        setRows((prev) => prev.filter((row) => row.id !== itemId));
-      } else {
-        console.error('Failed to delete item');
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error);
-    }
-  };
 
-  const CustomTooltip = ({ note }) => (
-    <div
-      style={{
-        position: 'absolute',
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        color: 'white',
-        padding: '8px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        zIndex: 1000,
-        pointerEvents: 'none',
-      }}
-    >
-      {note}
-    </div>
-  );
+      setSelectedIngredient('');
+      setNewQuantity(1);
+    });
+  }
 
-  const DraggableRow = ({ row }) => {
-    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: row.id });
-    const [showTooltip, setShowTooltip] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-    const handleMouseEnter = (e) => {
-      setTooltipPosition({ x: e.clientX, y: e.clientY });
-      setShowTooltip(true);
-    };
 
-    const handleMouseLeave = () => {
-      setShowTooltip(false);
-    };
+
+// ------------------------------------- SELECTABLE FEATURES --------------------------------------------------
+
+  const SelectableRow = ({ row, isFromLowInventory = true }) => {
+    const isSelected = selectedItems.includes(row.id);
 
     return (
       <div
-        ref={setNodeRef}
-        {...listeners}
-        {...attributes}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{
+        onClick={(e) => {
+          e.stopPropagation();
+          handleItemSelect(row.id);
+        }} style={{
           display: 'flex',
           alignItems: 'center',
           padding: '8px',
           borderBottom: '1px solid #ddd',
-          cursor: 'grab',
-          backgroundColor: isDragging ? '#cce5ff' : '#f0f8ff',
-          opacity: isDragging ? 0.8 : 1,
-          transform: isDragging ? 'scale(1.05)' : 'none',
-          transition: 'transform 0.2s, background-color 0.2s, opacity 0.2s',
-          position: 'relative',
+          cursor: 'pointer',
+          backgroundColor: isSelected ? '#e3f2fd' : '#f0f8ff',
+          border: isSelected ? '2px solid #2196f3' : '1px solid #ddd',
+          transition: 'all 0.2s',
         }}
       >
-        {showTooltip && row.note && (
-          <CustomTooltip
-            note={row.note}
-            style={{ top: tooltipPosition.y + 10, left: tooltipPosition.x + 10 }}
-          />
-        )}
         <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {row.item}
           {row.note && (
@@ -431,21 +362,110 @@ export default function ShoppingListPage() {
     );
   };
 
-  const DroppableContainer = ({ id, children, columns }) => {
-    const { setNodeRef, isOver } = useDroppable({ id });
 
+  const handleItemSelect = (itemId) => {
+    setSelectedItems(prev => {
+      if (prev.includes(itemId)) {
+        return prev.filter(id => id !== itemId); // Deselect if already selected
+      } else {
+        return [...prev, itemId]; // Select if not selected
+      }
+    });
+  };
+
+
+
+  const handleContainerClick = (containerId) => {
+    if (selectedItems.length === 0) return;
+
+    if (containerId === 'customList') {
+      moveItemsToShoppingList();
+    } else if (containerId === 'shoppingList') {
+      moveItemsToLowInventory();
+    }
+  };
+
+
+
+
+
+  const moveItemsToLowInventory = () => {
+    const itemsToMove = customList.filter(item => selectedItems.includes(item.id));
+
+    itemsToMove.forEach(item => {
+      openQuantityDialog(item.quantity, (quantity) => {
+        setRows(prev => {
+          const existingItem = prev.find(r => r.id === item.id);
+          if (existingItem) {
+            return prev.map(r => r.id === item.id
+              ? { ...r, quantity: r.quantity + quantity }
+              : r
+            );
+          } else {
+            return [...prev, { ...item, quantity }];
+          }
+        });
+
+        setCustomList(prev =>
+          prev.map(item => item.id === selectedItems[0]
+            ? { ...item, quantity: item.quantity - quantity }
+            : item
+          ).filter(item => item.quantity > 0)
+        );
+      });
+    });
+
+    setSelectedItems([]);
+  };
+
+  const moveItemsToShoppingList = () => {
+    const itemsToMove = rows.filter(row => selectedItems.includes(row.id));
+
+    itemsToMove.forEach(item => {
+      openQuantityDialog(item.quantity, (quantity) => {
+        setCustomList(prev => {
+          const existingItem = prev.find(i => i.id === item.id);
+          if (existingItem) {
+            return prev.map(i => i.id === item.id
+              ? { ...i, quantity: i.quantity + quantity }
+              : i
+            );
+          } else {
+            return [...prev, { ...item, quantity }];
+          }
+        });
+
+        setRows(prev =>
+          prev.map(row => row.id === item.id
+            ? { ...row, quantity: row.quantity - quantity }
+            : row
+          ).filter(row => row.quantity > 0)
+        );
+      });
+    });
+
+    setSelectedItems([]);
+  };
+
+
+
+
+
+  const ClickableContainer = ({ id, children, columns, onContainerClick, isTargetForSelected }) => {
     return (
       <div
-        ref={setNodeRef}
+        onClick={() => onContainerClick(id)}
         style={{
           padding: '16px',
-          backgroundColor: isOver ? '#d4edda' : '#f8f9fa',
+          backgroundColor: isTargetForSelected ? '#e8f5e8' : '#f8f9fa', // Highlight when it can receive selected items
           borderRadius: '4px',
-          transition: 'background-color 0.3s',
           marginBottom: '16px',
-          minHeight: '300px', // Ensures consistent height
+          minHeight: '300px',
           display: 'flex',
           flexDirection: 'column',
+          cursor: isTargetForSelected ? 'pointer' : 'default',
+          border: isTargetForSelected ? '2px dashed #4caf50' : '1px solid #ddd',
+          transition: 'all 0.3s',
         }}
       >
         <div style={{ display: 'flex', padding: '8px', backgroundColor: '#e0e0e0', fontWeight: 'bold' }}>
@@ -454,92 +474,22 @@ export default function ShoppingListPage() {
           ))}
         </div>
         <div style={{ flex: 1 }}>{children}</div>
+        {isTargetForSelected && (
+          <div style={{ textAlign: 'center', color: '#4caf50', fontWeight: 'bold', marginTop: '8px' }}>
+            Click here to move {selectedItems.length} item(s)
+          </div>
+        )}
       </div>
     );
   };
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
 
-    if (!over || active.id === over.id) return;
 
-    const draggedItem = rows.find((row) => row.id === active.id) || customList.find((item) => item.id === active.id);
+// --------------------------------------------------------------------------------------------------------
 
-    if (over.id === 'customList' && rows.some((row) => row.id === active.id)) {
-      const existingItem = customList.find((item) => item.id === active.id);
-      const maxQuantity = draggedItem.quantity;
 
-      openQuantityDialog(maxQuantity, (quantity) => {
-        setCustomList((prev) => {
-          if (existingItem) {
-            return prev.map((item) =>
-              item.id === active.id
-                ? { ...item, quantity: item.quantity + quantity }
-                : item
-            );
-          } else {
-            return [...prev, { ...draggedItem, quantity }];
-          }
-        });
-        setRows((prev) =>
-          prev.map((row) =>
-            row.id === active.id
-              ? { ...row, quantity: row.quantity - quantity }
-              : row
-          ).filter((row) => row.quantity > 0)
-        );
-      });
-    } else if (over.id === 'shoppingList' && customList.some((item) => item.id === active.id)) {
-      const existingItem = rows.find((row) => row.id === active.id);
-      const maxQuantity = draggedItem.quantity;
 
-      openQuantityDialog(maxQuantity, (quantity) => {
-        setRows((prev) => {
-          if (existingItem) {
-            return prev.map((row) =>
-              row.id === active.id
-                ? { ...row, quantity: row.quantity + quantity }
-                : row
-            );
-          } else {
-            return [...prev, { ...draggedItem, quantity }];
-          }
-        });
-        setCustomList((prev) =>
-          prev.map((item) =>
-            item.id === active.id
-              ? { ...item, quantity: item.quantity - quantity }
-              : item
-          ).filter((item) => item.quantity > 0)
-        );
-      });
-    } else if (over.id === 'trash') {
-      handleDeleteItem(active.id);
-    }
-  };
 
-  const TrashContainer = () => {
-    const { setNodeRef, isOver } = useDroppable({ id: 'trash' });
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={{
-          width: '100px',
-          height: '100px',
-          backgroundColor: isOver ? '#ffcccc' : '#f8d7da',
-          borderRadius: '50%',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          margin: '16px auto',
-          cursor: 'pointer',
-        }}
-      >
-        <DeleteIcon style={{ color: '#721c24', fontSize: '48px' }} />
-      </div>
-    );
-  };
 
   const handleSubmitCustomList = async () => {
     if (customList.length === 0) {
@@ -600,6 +550,16 @@ export default function ShoppingListPage() {
     });
   };
 
+
+
+  // Filter rows based on search query for Low Inventory
+  const filteredRows = rows.filter(row =>
+    row.item.toLowerCase().includes(lowInventorySearchQuery.toLowerCase())
+  );
+
+
+
+
   return (
     <Layout>
       <Box sx={{ width: '100%', px: 2, mt: 4 }}>
@@ -607,7 +567,7 @@ export default function ShoppingListPage() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, mt: 4 }}>
           <TextField
             select
-            label="Select Ingredient"
+            label="Select Item"
             value={selectedIngredient}
             onChange={(e) => setSelectedIngredient(e.target.value)}
             variant="outlined"
@@ -634,8 +594,7 @@ export default function ShoppingListPage() {
           </Button>
         </Box>
 
-        {/* Drag and Drop Section */}
-        <DndContext onDragEnd={handleDragEnd}>
+        <DndContext> 
           <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
             {/* Low Inventory Box */}
             <Paper
@@ -647,24 +606,50 @@ export default function ShoppingListPage() {
                 flex: 1,
               }}
             >
+
+
+
               <Typography variant="h6" gutterBottom>
                 Low Inventory
               </Typography>
+
+
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 The quantity shown is the number of packages to purchase, not individual items.
               </Typography>
-              <DroppableContainer id="shoppingList" columns={columns}>
-                {rows.map((row) => (
-                  <DraggableRow key={row.id} row={row} />
+
+
+
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: -1, mt: -1 }}>
+                {/* Search bar */}
+                <TextField
+                  label="Search Item..."
+                  value={lowInventorySearchQuery}
+                  onChange={(e) => setLowInventorySearchQuery(e.target.value)}
+                  variant="outlined"
+                  fullWidth
+                  size="small"
+                  sx={{
+                    width: '25%',
+                    '& .MuiInputBase-input': {
+                      color: 'grey.600', // Makes the input text grey
+                    }
+                  }} placeholder="Search by item name..."
+                />
+              </Box>
+
+
+
+              <ClickableContainer
+                id="shoppingList"
+                columns={columns}
+                onContainerClick={handleContainerClick}
+                isTargetForSelected={selectedItems.length > 0 && customList.some(item => selectedItems.includes(item.id))}
+              >
+                {filteredRows.map((row) => (
+                  <SelectableRow key={row.id} row={row} />
                 ))}
-              </DroppableContainer>
-
-
-              {/*
-              <Button variant="contained" color="primary" onClick={handleSubmitPurchase}>
-                Submit To Pending Purchases
-              </Button>
-              */}
+              </ClickableContainer>
 
 
 
@@ -686,11 +671,21 @@ export default function ShoppingListPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 The quantity shown is the number of packages to purchase, not individual items.
               </Typography>
-              <DroppableContainer id="customList" columns={columns}>
+
+
+              <ClickableContainer
+                id="customList"
+                columns={columns}
+                onContainerClick={handleContainerClick}
+                isTargetForSelected={selectedItems.length > 0 && rows.some(row => selectedItems.includes(row.id))}
+              >
                 {customList.map((item) => (
-                  <DraggableRow key={item.id} row={item} />
+                  <SelectableRow key={item.id} row={item} />
                 ))}
-              </DroppableContainer>
+              </ClickableContainer>
+
+
+
               <Button
                 variant="contained"
                 color="secondary"
@@ -701,8 +696,7 @@ export default function ShoppingListPage() {
             </Paper>
           </Box>
 
-          {/* Trash Container */}
-          <TrashContainer />
+         
         </DndContext>
       </Box>
 
