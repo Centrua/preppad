@@ -17,39 +17,6 @@ import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 
-const columns = [
-  {
-    field: 'item',
-    headerName: 'Item',
-    flex: 1,
-    editable: false, // Item name should not be editable
-    headerAlign: 'center',
-    align: 'center',
-  },
-  {
-    field: 'quantity',
-    headerName: 'Packages Needed',
-    description: 'This is the number of packages to purchase, not individual items.',
-    type: 'number',
-    flex: 1,
-    editable: true,
-    headerAlign: 'center',
-    align: 'center',
-    valueParser: (value) => {
-      const parsed = Number(value);
-      return isNaN(parsed) ? 0 : parsed;
-    },
-  },
-  {
-    field: 'packagesLeft',
-    headerName: 'Packages Left',
-    flex: 1,
-    editable: false,
-    headerAlign: 'center',
-    align: 'center',
-  },
-];
-
 
 const lowInventoryColumns = [
   { field: 'item', headerName: 'Item', flex: 1, headerAlign: 'center', align: 'center' },
