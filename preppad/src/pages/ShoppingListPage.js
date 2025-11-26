@@ -749,6 +749,25 @@ export default function ShoppingListPage() {
               >
                 Submit Custom List
               </Button>
+
+
+              {/* Remove items feature. Way more simple. */}
+              {selectedItems.length > 0 && customList.some(item => selectedItems.includes(item.id)) && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => {
+                    setCustomList(prev => prev.filter(item => !selectedItems.includes(item.id)));
+                    setSelectedItems([]); // Clear the selection.
+                  }}
+                  sx={{
+                    mt: 0,
+                    ml: 3,
+                  }}
+                >
+                  Remove Selected ({selectedItems.filter(id => customList.some(item => item.id === id)).length})
+                </Button>
+              )}
             </Paper>
           </Box>
 
