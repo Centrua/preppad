@@ -54,6 +54,14 @@ export default function ShoppingListPage() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [moveMode, setMoveMode] = useState(false);
 
+
+  // Editing notes states.
+  const [editNoteDialogOpen, setEditNoteDialogOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editingNote, setEditingNote] = useState('');
+
+
+
   const openDialog = (message) => {
     setDialogMessage(message);
     setDialogOpen(true);
@@ -99,12 +107,36 @@ export default function ShoppingListPage() {
   const openNoteDialog = (callback) => {
     setOnNoteConfirm(() => callback);
     setNoteDialogOpen(true);
+  }
+
+  const openEditNoteDialog = (itemId, currentNote) => {
+    setEditingItemId(itemId);
+    setEditingNote(currentNote || '');
+    setEditNoteDialogOpen(true);
   };
+
 
   const closeNoteDialog = () => {
     setNoteDialogOpen(false);
     setIngredientNote('');
     setOnNoteConfirm(null);
+  }
+
+  const closeEditNoteDialog = () => {
+    setEditNoteDialogOpen(false);
+    setEditingItemId(null);
+    setEditingNote('');
+  };
+
+  const handleEditNoteConfirm = () => {
+    setCustomList(prev =>
+      prev.map(item =>
+        item.id === editingItemId
+          ? { ...item, note: editingNote }
+          : item
+      )
+    );
+    closeEditNoteDialog();
   };
 
   const handleQuantityConfirm = () => {
@@ -161,7 +193,7 @@ export default function ShoppingListPage() {
 
         setRows(lowInventoryItems);
       }
-    } 
+    }
     catch (err) {
       console.error('Error refreshing inventory data:', err);
     }
@@ -370,7 +402,17 @@ export default function ShoppingListPage() {
           transition: 'all 0.2s',
         }}
       >
-        <span style={{ flex: 1, textAlign: 'center' }}>{row.item}</span>
+        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {row.item}
+          {row.note && (
+            <EditNoteIcon style={{ color: 'red', marginLeft: '8px', cursor: 'pointer' }}
+              titleAccess="Click to edit note"
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditNoteDialog(row.id, row.note);
+              }}
+            />)}
+        </span>
         <span style={{ flex: 1, textAlign: 'center' }}>{row.quantity}</span>
       </div>
     );
@@ -634,7 +676,7 @@ export default function ShoppingListPage() {
 
 
 
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: -1, mt: -1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: -1 }}>
                 {/* Search bar */}
                 <TextField
                   label="Search Item..."
@@ -805,6 +847,30 @@ export default function ShoppingListPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+
+      {/* Edit Note Dialog */}
+      <Dialog open={editNoteDialogOpen} onClose={closeEditNoteDialog}>
+        <DialogTitle>Edit Note</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 1 }}>Note:</Typography>
+          <TextField
+            value={editingNote}
+            onChange={(e) => setEditingNote(e.target.value)}
+            multiline
+            variant="outlined"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeEditNoteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleEditNoteConfirm} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Layout>
   );
 }
