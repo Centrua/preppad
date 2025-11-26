@@ -708,7 +708,10 @@ export default function ShoppingListPage() {
               </ClickableContainer>
 
 
-
+              {/* DISCLAIMER */}
+              <Typography fontSize={12} color="text.secondary" sx={{ mb: 0 }}>
+                <strong>**Low stock only updates when Pendling Purchase is completed.</strong>
+              </Typography>
             </Paper>
 
             {/* Shopping List Box */}
