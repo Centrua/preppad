@@ -201,6 +201,65 @@ export default function ShoppingListPage() {
 
 
 
+  // ---------REFRESH FOR ITEMS THAT GOT DELETED FROM LIST---------
+  const refreshSpecificItems = async (itemsToRefresh) => {
+    try {
+
+      const token = localStorage.getItem('token');
+      const API_BASE = process.env.REACT_APP_API_BASE_URL;
+
+      const response = await fetch(`${API_BASE}/ingredients`, {
+        method: 'GET',
+        headers: { 
+          Authorization: `Bearer ${token}`
+         },
+
+      });
+
+      if (response.ok) {
+        const inventoryData = await response.json();
+
+        const updatedItems = itemsToRefresh.map(removedItem => {
+          const inventoryItem = inventoryData.find(item => item.id === removedItem.id);
+          if (inventoryItem && inventoryItem.quantityInStock < inventoryItem.max) {
+            return {
+              id: inventoryItem.id,
+              item: inventoryItem.itemName,
+              quantity: Math.round(inventoryItem.max - inventoryItem.quantityInStock),
+              packagesLeft: inventoryItem.quantityInStock,
+              note: removedItem.note || '', 
+            };
+          }
+          return null;
+        }).filter(Boolean); 
+
+        // Add these items back to the rows (low inventory)
+        setRows(prev => {
+          const newRows = [...prev];
+          updatedItems.forEach(updatedItem => {
+            const existingIndex = newRows.findIndex(row => row.id === updatedItem.id);
+            if (existingIndex >= 0) {
+              // Update existing item
+              newRows[existingIndex] = updatedItem;
+            } 
+            else {
+              // Add new item if it should be in low inventory
+              newRows.push(updatedItem);
+            }
+          });
+
+
+          return newRows;
+        });
+      }
+    } 
+    catch (err) {
+      console.error('Error refreshing specific items:', err);
+    }
+  };
+
+
+
 
 
 
@@ -762,6 +821,7 @@ export default function ShoppingListPage() {
                   onClick={() => {
                     setCustomList(prev => prev.filter(item => !selectedItems.includes(item.id)));
                     setSelectedItems([]); // Clear the selection.
+                    refreshSpecificItems(customList.filter(item => selectedItems.includes(item.id)));
                   }}
                   sx={{
                     mt: 0,
