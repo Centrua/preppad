@@ -108,11 +108,11 @@ export default function PendingPurchasesPage() {
     if (!selectedPurchase || !selectedPurchase.id) return;
     setFormError('');
 
-    if (!purchaseLocation) {
-      setFormError('Purchase location is required.');
-      setConfirmInventoryDialogOpen(false);
-      return;
-    }
+    // if (!purchaseLocation) {
+    //   setFormError('Purchase location is required.');
+    //   setConfirmInventoryDialogOpen(false);
+    //   return;
+    // }
 
     try {
       const res = await fetch(
@@ -490,7 +490,7 @@ export default function PendingPurchasesPage() {
                   </Table>
                 </TableContainer>
 
-                <TextField
+                {/* <TextField
                   label="Purchase Location"
                   value={purchaseLocation}
                   onChange={(e) => setPurchaseLocation(e.target.value)}
@@ -498,7 +498,7 @@ export default function PendingPurchasesPage() {
                   margin="normal"
                   disabled={selectedPurchase.status === 'completed'}
                 >
-                </TextField>
+                </TextField> */}
 
 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left', gap: 1, marginTop: 3, marginLeft: 1}}>
